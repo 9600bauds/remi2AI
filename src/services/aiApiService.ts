@@ -1,96 +1,63 @@
+import { GoogleGenAI, GenerateContentResponse, type Part } from '@google/genai';
+
 const API_KEY = import.meta.env.VITE_AI_API_KEY as string;
 const MODEL_NAME = import.meta.env.VITE_MODEL_NAME as string;
-const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NAME}:generateContent?key=${API_KEY}`;
 
-interface AIPart {
-  text?: string;
-  inline_data?: {
-    mime_type: string;
-    data: string;
-  };
-}
-
-interface AIContent {
-  parts: AIPart[];
-  role?: string;
-}
-
-interface AIRequestPayload {
-  contents: AIContent[];
-  // generationConfig?: GenerationConfig; // Optional
-}
-
-const fileToGenerativePart = async (file: File): Promise<AIPart> => {
+const fileToGenerativePart = async (file: File): Promise<Part> => {
   const base64EncodedString = await new Promise<string>((resolve, reject) => {
     const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = (err) => reject(err);
+    reader.onload = () => {
+      const resultString = reader.result as string;
+      resolve(resultString.split(',')[1]);
+    };
+    reader.onerror = (event) => {
+      const error = event.target?.error;
+      if (error) {
+        reject(
+          new Error(`FileReader error: ${error.message || 'Unknown error'}`)
+        );
+      } else {
+        reject(new Error('FileReader failed with an unknown error.'));
+      }
+    };
     reader.readAsDataURL(file);
   });
-
-  return {
-    inline_data: {
-      mime_type: file.type,
-      data: base64EncodedString.split(',')[1],
-    },
-  };
+  return { inlineData: { mimeType: file.type, data: base64EncodedString } };
 };
 
 export const sendAiRequest = async (
-  files: File[], // Changed from file: File to files: File[]
+  files: File[],
   prompt: string
-): Promise<any> => {
-  if (!API_KEY) {
-    console.error(
-      'No se ha configurado el archivo .env (falta VITE_AI_API_KEY)!'
-    );
-    throw new Error(
-      'No se ha configurado el archivo .env (falta VITE_AI_API_KEY)!'
-    );
-  }
-  if (files.length === 0) {
-    throw new Error('No se han subido archivos.');
-  }
+): Promise<GenerateContentResponse> => {
+  if (!API_KEY) throw new Error('VITE_AI_API_KEY is not configured.');
+  if (files.length === 0) throw new Error('No files uploaded.');
+  if (!MODEL_NAME) throw new Error('VITE_MODEL_NAME is not configured.');
+
+  const genAI = new GoogleGenAI({ apiKey: API_KEY });
 
   try {
-    const textPart: AIPart = { text: prompt };
-
-    // Create image parts from all files
+    const textPart: Part = { text: prompt };
     const imagePartsPromises = files.map((file) => fileToGenerativePart(file));
     const imageParts = await Promise.all(imagePartsPromises);
 
-    // Combine text prompt and image parts
-    // The order is important: prompt text first, then all image parts.
-    const allParts: AIPart[] = [textPart, ...imageParts];
+    // As per the SDK examples, 'contents' is an array of Part objects for a single user message
+    const requestPartsForContent: Part[] = [textPart, ...imageParts];
 
-    const payload: AIRequestPayload = {
-      contents: [
-        {
-          parts: allParts,
-        },
-      ],
-    };
-
-    const response = await fetch(API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload),
+    // The result object will have a .text property (or method) as per your examples
+    const result = await genAI.models.generateContent({
+      model: MODEL_NAME,
+      contents: requestPartsForContent,
+      // generationConfig: {
+      //   responseMimeType: "application/json", // For JSON mode
+      // },
     });
 
-    if (!response.ok) {
-      const errorBody = await response.json();
-      console.error('AI API Error:', errorBody);
-      throw new Error(
-        `API request failed with status ${response.status}: ${errorBody.error?.message || response.statusText}`
-      );
-    }
-
-    const data = await response.json();
-    return data;
+    return result; // Return the direct result object from the SDK call
   } catch (error) {
-    console.error('Error calling AI API:', error);
-    throw error;
+    console.error('Error calling AI API with @google/genai SDK:', error);
+    if (error instanceof Error) {
+      throw new Error(`SDK Error: ${error.message}`);
+    }
+    throw new Error('An unknown error occurred while calling the AI API.');
   }
 };

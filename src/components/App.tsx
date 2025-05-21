@@ -2,12 +2,14 @@ import { useState } from 'react';
 import FileUpload from './FileUpload';
 import { sendAiRequest } from '../services/aiApiService';
 import './App.css';
+import type { GenerateContentResponse } from '@google/genai';
 
 function App() {
   // Changed from selectedFile to selectedFiles, and type to File[]
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [apiResponse, setApiResponse] = useState<any | null>(null);
+  const [apiResponse, setApiResponse] =
+    useState<GenerateContentResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   // Changed prop name and type
