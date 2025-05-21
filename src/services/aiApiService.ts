@@ -1,4 +1,10 @@
-import { GoogleGenAI, GenerateContentResponse, type Part } from '@google/genai';
+// src/services/aiApiService.ts
+import {
+  GoogleGenAI,
+  type GenerateContentResponse,
+  type Part,
+  type Schema,
+} from '@google/genai';
 
 const API_KEY = import.meta.env.VITE_AI_API_KEY as string;
 const MODEL_NAME = import.meta.env.VITE_MODEL_NAME as string;
@@ -11,13 +17,19 @@ const fileToGenerativePart = async (file: File): Promise<Part> => {
       resolve(resultString.split(',')[1]);
     };
     reader.onerror = (event) => {
-      const error = event.target?.error;
-      if (error) {
+      const fileReaderError = event.target?.error;
+      if (fileReaderError) {
         reject(
-          new Error(`FileReader error: ${error.message || 'Unknown error'}`)
+          new Error(
+            `FileReader error on file ${file.name}: ${fileReaderError.name} - ${fileReaderError.message}`
+          )
         );
       } else {
-        reject(new Error('FileReader failed with an unknown error.'));
+        reject(
+          new Error(
+            `FileReader failed on file ${file.name} with an unknown error.`
+          )
+        );
       }
     };
     reader.readAsDataURL(file);
@@ -29,6 +41,7 @@ export const sendAiRequest = async (
   files: File[],
   prompt: string
 ): Promise<GenerateContentResponse> => {
+  // Type for the direct result of generateContent
   if (!API_KEY) throw new Error('VITE_AI_API_KEY is not configured.');
   if (files.length === 0) throw new Error('No files uploaded.');
   if (!MODEL_NAME) throw new Error('VITE_MODEL_NAME is not configured.');
@@ -40,19 +53,33 @@ export const sendAiRequest = async (
     const imagePartsPromises = files.map((file) => fileToGenerativePart(file));
     const imageParts = await Promise.all(imagePartsPromises);
 
-    // As per the SDK examples, 'contents' is an array of Part objects for a single user message
     const requestPartsForContent: Part[] = [textPart, ...imageParts];
+    const schemaText = import.meta.env.VITE_STRUCTURED_OUTPUT_SCHEMA as string;
+    if (!schemaText) {
+      throw new Error(
+        'VITE_STRUCTURED_OUTPUT_SCHEMA is not configured in .env'
+      );
+    }
+    let schemaObject: Schema;
+    try {
+      schemaObject = JSON.parse(schemaText) as Schema;
+    } catch (e) {
+      console.error('Failed to parse VITE_STRUCTURED_OUTPUT_SCHEMA:', e);
+      throw new Error(
+        'Invalid JSON schema provided in VITE_STRUCTURED_OUTPUT_SCHEMA.'
+      );
+    }
 
-    // The result object will have a .text property (or method) as per your examples
-    const result = await genAI.models.generateContent({
+    const result: GenerateContentResponse = await genAI.models.generateContent({
       model: MODEL_NAME,
       contents: requestPartsForContent,
-      // generationConfig: {
-      //   responseMimeType: "application/json", // For JSON mode
-      // },
+      config: {
+        responseMimeType: 'application/json',
+        responseSchema: schemaObject,
+      },
     });
 
-    return result; // Return the direct result object from the SDK call
+    return result;
   } catch (error) {
     console.error('Error calling AI API with @google/genai SDK:', error);
     if (error instanceof Error) {
