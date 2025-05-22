@@ -1,4 +1,3 @@
-// src/services/aiApiService.ts
 import {
   GoogleGenAI,
   type GenerateContentResponse,
@@ -40,11 +39,11 @@ const fileToGenerativePart = async (file: File): Promise<Part> => {
 export const sendAiRequest = async (
   files: File[],
   prompt: string
-): Promise<GenerateContentResponse> => {
-  // Type for the direct result of generateContent
+): Promise<string> => {
   if (!API_KEY) throw new Error('VITE_AI_API_KEY is not configured.');
   if (files.length === 0) throw new Error('No files uploaded.');
   if (!MODEL_NAME) throw new Error('VITE_MODEL_NAME is not configured.');
+  if (!prompt) throw new Error('AI service received an empty prompt!');
 
   const genAI = new GoogleGenAI({ apiKey: API_KEY });
 
@@ -60,6 +59,7 @@ export const sendAiRequest = async (
         'VITE_STRUCTURED_OUTPUT_SCHEMA is not configured in .env'
       );
     }
+
     let schemaObject: Schema;
     try {
       schemaObject = JSON.parse(schemaText) as Schema;
@@ -70,16 +70,23 @@ export const sendAiRequest = async (
       );
     }
 
-    const result: GenerateContentResponse = await genAI.models.generateContent({
-      model: MODEL_NAME,
-      contents: requestPartsForContent,
-      config: {
-        responseMimeType: 'application/json',
-        responseSchema: schemaObject,
-      },
-    });
+    const response: GenerateContentResponse =
+      await genAI.models.generateContent({
+        model: MODEL_NAME,
+        contents: requestPartsForContent,
+        config: {
+          responseMimeType: 'application/json',
+          responseSchema: schemaObject,
+        },
+      });
 
-    return result;
+    if (!response.text) {
+      throw new Error(
+        'Received a successful, but empty response from the AI API!'
+      );
+    }
+
+    return response.text;
   } catch (error) {
     console.error('Error calling AI API with @google/genai SDK:', error);
     if (error instanceof Error) {
