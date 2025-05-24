@@ -24,31 +24,55 @@ function App() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
+  /**
+   * Google API load/init
+   */
   useEffect(() => {
-    const initGapiClient = () => {
-      if (gapi && gapi.load) {
-        gapi.load('client', async () => {
-          try {
-            await gapi.client.init({
-              apiKey: API_KEY,
-              discoveryDocs: DISCOVERY_DOCS,
-            });
-            setIsGapiClientReady(true);
-          } catch (e: unknown) {
-            console.error('Error initializing GAPI client:', e);
-            setGoogleAuthError(
-              `Failed to initialize GAPI client: ${e instanceof Error ? e.message : 'Unknown error'}`
-            );
-          }
+    const initGapiClient = async () => {
+      try {
+        await gapi.client.init({
+          apiKey: API_KEY,
+          discoveryDocs: DISCOVERY_DOCS,
         });
-      } else {
-        // Poll for gapi to be loaded if script is async/defer
-        setTimeout(initGapiClient, 100);
+        setIsGapiClientReady(true);
+      } catch (e: unknown) {
+        console.error('Error initializing GAPI client:', e);
+        setGoogleAuthError(
+          `Failed to initialize GAPI client: ${e instanceof Error ? e.message : 'Unknown error'}`
+        );
       }
     };
-    initGapiClient();
+
+    const loadGapiClient = () => {
+      if (typeof gapi === 'undefined') {
+        // Not loaded yet - just pool to retry later. Shouldn't happen anymore?
+        setTimeout(loadGapiClient, 100);
+        return;
+      }
+      gapi.load('client', {
+        callback: () => {
+          void initGapiClient();
+        },
+        onerror: () => {
+          const errorMsg = 'Failed to load GAPI client library';
+          console.error(errorMsg);
+          setGoogleAuthError(errorMsg);
+        },
+        timeout: 5000,
+        ontimeout: () => {
+          const timeoutMsg =
+            'GAPI client library could not load in a timely manner';
+          console.error(timeoutMsg);
+          setGoogleAuthError(timeoutMsg);
+        },
+      });
+    };
+    loadGapiClient();
   }, []);
 
+  /**
+   * Google authentication login/log out
+   */
   const googleSignIn = useGoogleLogin({
     onSuccess: (tokenResponse) => {
       console.log('Google Login Success:', tokenResponse);
