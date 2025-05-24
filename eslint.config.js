@@ -73,7 +73,6 @@ export default tseslint.config(
         'warn',
         { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
       ],
-      'prettier/prettier': 'warn',
     },
     settings: {
       react: {

@@ -6,7 +6,7 @@ import './App.css';
 
 const SHEETS_TEMPLATE_ID = '1e4AaDW9w5YIWpQ0FuM0Qkz4zA4IzAwNz_yvaZKGGIV8';
 const DISCOVERY_DOCS = [
-  'https://sheets.googleapis.com/\$discovery/rest?version=v4',
+  'https://sheets.googleapis.com/$discovery/rest?version=v4',
   'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest',
 ];
 const GAPI_SCOPE =
@@ -34,10 +34,10 @@ function App() {
               discoveryDocs: DISCOVERY_DOCS,
             });
             setIsGapiClientReady(true);
-          } catch (e: any) {
+          } catch (e: unknown) {
             console.error('Error initializing GAPI client:', e);
             setGoogleAuthError(
-              `Failed to initialize GAPI client: ${e.message || 'Unknown error'}`
+              `Failed to initialize GAPI client: ${e instanceof Error ? e.message : 'Unknown error'}`
             );
           }
         });
@@ -50,21 +50,29 @@ function App() {
   }, []);
 
   const googleSignIn = useGoogleLogin({
-    onSuccess: async (tokenResponse) => {
+    onSuccess: (tokenResponse) => {
       console.log('Google Login Success:', tokenResponse);
       setAccessToken(tokenResponse.access_token);
       gapi.client.setToken({ access_token: tokenResponse.access_token });
       setIsGoogleSignedIn(true);
       setGoogleAuthError(null);
     },
-    onError: (errorResponse) => {
+    onError: (errorResponse: unknown) => {
       console.error('Google Login Failed:', errorResponse);
-      const message =
-        typeof errorResponse === 'string'
-          ? errorResponse
-          : (errorResponse as any)?.error_description ||
-            (errorResponse as any)?.error ||
-            'Login failed.';
+      let message = 'Login failed for unknown reasons.';
+      if (typeof errorResponse === 'string') {
+        message = errorResponse;
+      } else if (
+        errorResponse &&
+        typeof errorResponse === 'object' &&
+        'error' in errorResponse
+      ) {
+        const err = errorResponse as {
+          error: string;
+          error_description?: string;
+        };
+        message = err.error_description || err.error;
+      }
       setGoogleAuthError(`Google Login Error: ${message}`);
       setIsGoogleSignedIn(false);
       setAccessToken(null);
@@ -85,7 +93,7 @@ function App() {
   const copyFile = async (
     fileId: string,
     copyFilename = `Processed Data - ${new Date().toLocaleString()}`
-  ): Promise<gapi.client.drive.FileResource | null> => {
+  ): Promise<gapi.client.drive.File> => {
     if (!gapi || !gapi.client || !gapi.client.drive) {
       throw new Error(
         'Google API client is not ready. Please ensure you are signed in and the client has initialized.'
@@ -109,7 +117,7 @@ function App() {
     spreadsheetID: string,
     dataToWrite: string[][],
     range: string = 'Sheet1!A1'
-  ): Promise<any> => {
+  ): Promise<gapi.client.Response<gapi.client.sheets.UpdateValuesResponse>> => {
     if (!gapi || !gapi.client || !gapi.client.sheets) {
       throw new Error(
         'Google API client is not ready. Please ensure you are signed in and the client has initialized.'
@@ -184,13 +192,13 @@ function App() {
       prompt
     );
     console.log('AI API Response:', response);
-    let aiData = [
+    const aiData = [
       ['a', 'b'],
       ['c', 'd'],
     ];
 
-    let copiedFile = await copyFile(SHEETS_TEMPLATE_ID);
-    if (!copiedFile) {
+    const copiedFile = await copyFile(SHEETS_TEMPLATE_ID);
+    if (!copiedFile || !copiedFile.id) {
       setError('No se pudo copiar el archivo.');
       setIsLoading(false);
       return;

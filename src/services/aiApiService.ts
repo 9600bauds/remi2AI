@@ -50,7 +50,7 @@ export const sendAiRequest = async (
     const imageParts = await Promise.all(imagePartsPromises);
 
     const requestPartsForContent: Part[] = [textPart, ...imageParts];
-    const schemaText = import.meta.env.VITE_STRUCTURED_OUTPUT_SCHEMA as string;
+    const schemaText = import.meta.env.VITE_STRUCTURED_OUTPUT_SCHEMA;
     if (!schemaText) {
       throw new Error(
         'VITE_STRUCTURED_OUTPUT_SCHEMA is not configured in .env'
