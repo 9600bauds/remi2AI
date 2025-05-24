@@ -1,12 +1,141 @@
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { useGoogleLogin, googleLogout } from '@react-oauth/google';
 import FileUpload from './FileUpload';
 import { sendAiRequest } from '../services/aiApiService';
 import './App.css';
 
+const SHEETS_TEMPLATE_ID = '1e4AaDW9w5YIWpQ0FuM0Qkz4zA4IzAwNz_yvaZKGGIV8';
+const DISCOVERY_DOCS = [
+  'https://sheets.googleapis.com/\$discovery/rest?version=v4',
+  'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest',
+];
+const GAPI_SCOPE =
+  'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive';
+const API_KEY = import.meta.env.VITE_GOOGLE_API_KEY;
+const AI_MODEL = import.meta.env.VITE_MODEL_NAME;
+
 function App() {
+  const [isGapiClientReady, setIsGapiClientReady] = useState<boolean>(false);
+  const [accessToken, setAccessToken] = useState<string | null>(null);
+  const [isGoogleSignedIn, setIsGoogleSignedIn] = useState<boolean>(false);
+  const [googleAuthError, setGoogleAuthError] = useState<string | null>(null);
+
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const initGapiClient = () => {
+      if (gapi && gapi.load) {
+        gapi.load('client', async () => {
+          try {
+            await gapi.client.init({
+              apiKey: API_KEY,
+              discoveryDocs: DISCOVERY_DOCS,
+            });
+            setIsGapiClientReady(true);
+          } catch (e: any) {
+            console.error('Error initializing GAPI client:', e);
+            setGoogleAuthError(
+              `Failed to initialize GAPI client: ${e.message || 'Unknown error'}`
+            );
+          }
+        });
+      } else {
+        // Poll for gapi to be loaded if script is async/defer
+        setTimeout(initGapiClient, 100);
+      }
+    };
+    initGapiClient();
+  }, []);
+
+  const googleSignIn = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      console.log('Google Login Success:', tokenResponse);
+      setAccessToken(tokenResponse.access_token);
+      gapi.client.setToken({ access_token: tokenResponse.access_token });
+      setIsGoogleSignedIn(true);
+      setGoogleAuthError(null);
+    },
+    onError: (errorResponse) => {
+      console.error('Google Login Failed:', errorResponse);
+      const message =
+        typeof errorResponse === 'string'
+          ? errorResponse
+          : (errorResponse as any)?.error_description ||
+            (errorResponse as any)?.error ||
+            'Login failed.';
+      setGoogleAuthError(`Google Login Error: ${message}`);
+      setIsGoogleSignedIn(false);
+      setAccessToken(null);
+      gapi.client.setToken(null);
+    },
+    scope: GAPI_SCOPE,
+  });
+
+  const googleSignOut = () => {
+    googleLogout(); // From @react-oauth/google
+    setAccessToken(null);
+    gapi.client.setToken(null); // Clear token from gapi client
+    setIsGoogleSignedIn(false);
+    setGoogleAuthError(null);
+    console.log('Signed out from Google.');
+  };
+
+  const copyFile = async (
+    fileId: string,
+    copyFilename = `Processed Data - ${new Date().toLocaleString()}`
+  ): Promise<gapi.client.drive.FileResource | null> => {
+    if (!gapi || !gapi.client || !gapi.client.drive) {
+      throw new Error(
+        'Google API client is not ready. Please ensure you are signed in and the client has initialized.'
+      );
+    }
+    if (!gapi.client.getToken()) {
+      throw new Error('Google access token is not set. Please sign in again.');
+    }
+
+    const copyRequest = await gapi.client.drive.files.copy({
+      fileId,
+      resource: {
+        name: copyFilename, // Todo: Typescript doesn't like what I'm doing here, even though it works
+      },
+      fields: 'id, webViewLink', // Fields to include in the response (we need the ID of the new copy)
+    });
+    return copyRequest.result;
+  };
+
+  const writeToSpreadsheet = async (
+    spreadsheetID: string,
+    dataToWrite: string[][],
+    range: string = 'Sheet1!A1'
+  ): Promise<any> => {
+    if (!gapi || !gapi.client || !gapi.client.sheets) {
+      throw new Error(
+        'Google API client is not ready. Please ensure you are signed in and the client has initialized.'
+      );
+    }
+    if (!gapi.client.getToken()) {
+      throw new Error('Google access token is not set. Please sign in again.');
+    }
+
+    if (!dataToWrite || dataToWrite.length === 0) {
+      throw new Error('No data provided to write to the sheet.');
+    }
+
+    const response = await window.gapi.client.sheets.spreadsheets.values.update(
+      {
+        spreadsheetId: spreadsheetID,
+        range,
+        valueInputOption: 'USER_ENTERED', // What exacly is this?
+        resource: {
+          values: dataToWrite,
+        },
+      }
+    );
+
+    return response;
+  };
 
   const handleFilesAdd = (newFiles: File[]) => {
     setSelectedFiles((prevFiles) => {
@@ -39,25 +168,35 @@ function App() {
       setError('Por favor seleccione uno o más archivos.');
       return;
     }
+    if (!isGoogleSignedIn || !isGapiClientReady) {
+      setError('Por favor inicie sesión.');
+      return;
+    }
 
     setIsLoading(true);
     setError(null);
 
-    const prompt = import.meta.env.VITE_PROMPT as string;
+    const prompt = import.meta.env.VITE_PROMPT;
+    const response = await sendAiRequest(
+      API_KEY,
+      AI_MODEL,
+      selectedFiles,
+      prompt
+    );
+    console.log('AI API Response:', response);
+    let aiData = [
+      ['a', 'b'],
+      ['c', 'd'],
+    ];
 
-    try {
-      const response = await sendAiRequest(selectedFiles, prompt);
-      console.log('AI API Response:', response);
-    } catch (err) {
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError('Ocurrió un error desconocido procesando los archivos.');
-      }
-      console.error('Error procesando archivos:', err);
-    } finally {
+    let copiedFile = await copyFile(SHEETS_TEMPLATE_ID);
+    if (!copiedFile) {
+      setError('No se pudo copiar el archivo.');
       setIsLoading(false);
+      return;
     }
+    await writeToSpreadsheet(copiedFile.id, aiData);
+    setIsLoading(false);
   };
 
   return (
@@ -106,6 +245,42 @@ function App() {
               <div className="alert alert-danger mt-4" role="alert">
                 <strong>Error:</strong> {error}
               </div>
+            )}
+          </div>
+        </div>
+
+        <div className="card shadow-sm mt-4">
+          <div className="card-body">
+            <h5 className="card-title">Google Integration</h5>
+            {!isGapiClientReady && <p>Loading Google API client...</p>}
+            {googleAuthError && (
+              <div className="alert alert-warning" role="alert">
+                {googleAuthError}
+              </div>
+            )}
+            {isGapiClientReady && (
+              <>
+                {!isGoogleSignedIn ? (
+                  <button
+                    type="button"
+                    className="btn btn-success"
+                    onClick={() => googleSignIn()}
+                    disabled={!isGapiClientReady}
+                  >
+                    Sign In with Google
+                  </button>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      className="btn btn-outline-danger mb-2"
+                      onClick={googleSignOut}
+                    >
+                      Sign Out
+                    </button>
+                  </>
+                )}
+              </>
             )}
           </div>
         </div>

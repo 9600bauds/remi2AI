@@ -1,12 +1,24 @@
+// src/main.tsx
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './components/App.tsx';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './index.css';
+import { GoogleOAuthProvider } from '@react-oauth/google';
+
+const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+
+if (!clientId) {
+  console.error(
+    'VITE_SHEETS_CLIENT_ID is not defined. Google OAuth will not work.'
+  );
+}
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <App />
+    <GoogleOAuthProvider clientId={clientId}>
+      <App />
+    </GoogleOAuthProvider>
   </StrictMode>
 );
 

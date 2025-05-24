@@ -67,6 +67,13 @@ export default tseslint.config(
       ...eslintPluginJsxA11y.configs.recommended.rules,
       'react/prop-types': 'off', // Not necessary with TypeScript
       'react/react-in-jsx-scope': 'off', // Not necessary with the new JSX transform
+
+      // User specific
+      '@typescript-eslint/no-unused-vars': [
+        'warn',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
+      ],
+      'prettier/prettier': 'warn',
     },
     settings: {
       react: {

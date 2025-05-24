@@ -5,9 +5,6 @@ import {
   type Schema,
 } from '@google/genai';
 
-const API_KEY = import.meta.env.VITE_AI_API_KEY as string;
-const MODEL_NAME = import.meta.env.VITE_MODEL_NAME as string;
-
 const fileToGenerativePart = async (file: File): Promise<Part> => {
   const base64EncodedString = await new Promise<string>((resolve, reject) => {
     const reader = new FileReader();
@@ -37,15 +34,15 @@ const fileToGenerativePart = async (file: File): Promise<Part> => {
 };
 
 export const sendAiRequest = async (
+  apiKey: string,
+  model: string,
   files: File[],
   prompt: string
 ): Promise<string> => {
-  if (!API_KEY) throw new Error('VITE_AI_API_KEY is not configured.');
   if (files.length === 0) throw new Error('No files uploaded.');
-  if (!MODEL_NAME) throw new Error('VITE_MODEL_NAME is not configured.');
   if (!prompt) throw new Error('AI service received an empty prompt!');
 
-  const genAI = new GoogleGenAI({ apiKey: API_KEY });
+  const genAI = new GoogleGenAI({ apiKey });
 
   try {
     const textPart: Part = { text: prompt };
@@ -72,7 +69,7 @@ export const sendAiRequest = async (
 
     const response: GenerateContentResponse =
       await genAI.models.generateContent({
-        model: MODEL_NAME,
+        model,
         contents: requestPartsForContent,
         config: {
           responseMimeType: 'application/json',
