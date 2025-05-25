@@ -37,8 +37,9 @@ export const sendAiRequest = async (
   apiKey: string,
   model: string,
   files: File[],
-  prompt: string
-): Promise<string> => {
+  prompt: string,
+  schemaText: string
+): Promise<string[][]> => {
   if (files.length === 0) throw new Error('No files uploaded.');
   if (!prompt) throw new Error('AI service received an empty prompt!');
 
@@ -50,16 +51,11 @@ export const sendAiRequest = async (
     const imageParts = await Promise.all(imagePartsPromises);
 
     const requestPartsForContent: Part[] = [textPart, ...imageParts];
-    const schemaText = import.meta.env.VITE_STRUCTURED_OUTPUT_SCHEMA;
-    if (!schemaText) {
-      throw new Error(
-        'VITE_STRUCTURED_OUTPUT_SCHEMA is not configured in .env'
-      );
-    }
 
     let schemaObject: Schema;
     try {
       schemaObject = JSON.parse(schemaText) as Schema;
+      console.log('schema object:', schemaObject);
     } catch (e) {
       console.error('Failed to parse VITE_STRUCTURED_OUTPUT_SCHEMA:', e);
       throw new Error(
@@ -82,8 +78,7 @@ export const sendAiRequest = async (
         'Received a successful, but empty response from the AI API!'
       );
     }
-
-    return response.text;
+    return jsonResponseTo2DArray(response.text, schemaObject);
   } catch (error) {
     console.error('Error calling AI API with @google/genai SDK:', error);
     if (error instanceof Error) {
@@ -92,3 +87,36 @@ export const sendAiRequest = async (
     throw new Error('An unknown error occurred while calling the AI API.');
   }
 };
+
+function jsonResponseTo2DArray(jsonText: string, schema: Schema): string[][] {
+  const data: unknown = JSON.parse(jsonText);
+
+  // Ensure we have an array of objects
+  if (
+    !Array.isArray(data) ||
+    !data.every((item) => typeof item === 'object' && item !== null)
+  ) {
+    throw new Error('Expected JSON response to be an array of objects');
+  }
+
+  // Extract property names from schema in order
+  const properties = schema.items?.properties;
+  if (!properties) {
+    throw new Error('Schema must have items.properties defined!');
+  }
+
+  // Get property names in the order they appear in the schema
+  const propertyNames = Object.keys(properties);
+
+  // Convert each object to an array of string values
+  const result: string[][] = data.map((item: Record<string, unknown>) => {
+    return propertyNames.map((propName) => {
+      const value = item[propName];
+      // Convert to string - this should never be an object, so we don't care about [object Object] shenanigans
+      // eslint-disable-next-line @typescript-eslint/no-base-to-string
+      return value !== null && value !== undefined ? String(value) : '';
+    });
+  });
+
+  return result;
+}

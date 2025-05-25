@@ -13,6 +13,7 @@ const GAPI_SCOPE =
   'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive';
 const API_KEY = import.meta.env.VITE_GOOGLE_API_KEY;
 const AI_MODEL = import.meta.env.VITE_MODEL_NAME;
+const AI_SCHEMA_TEXT = import.meta.env.VITE_STRUCTURED_OUTPUT_SCHEMA;
 
 function App() {
   const [isGapiClientReady, setIsGapiClientReady] = useState<boolean>(false);
@@ -155,16 +156,14 @@ function App() {
       throw new Error('No data provided to write to the sheet.');
     }
 
-    const response = await window.gapi.client.sheets.spreadsheets.values.update(
-      {
-        spreadsheetId: spreadsheetID,
-        range,
-        valueInputOption: 'USER_ENTERED', // What exacly is this?
-        resource: {
-          values: dataToWrite,
-        },
-      }
-    );
+    const response = await gapi.client.sheets.spreadsheets.values.update({
+      spreadsheetId: spreadsheetID,
+      range,
+      valueInputOption: 'USER_ENTERED', // What exacly is this?
+      resource: {
+        values: dataToWrite,
+      },
+    });
 
     return response;
   };
@@ -209,17 +208,13 @@ function App() {
     setError(null);
 
     const prompt = import.meta.env.VITE_PROMPT;
-    const response = await sendAiRequest(
+    const aiData = await sendAiRequest(
       API_KEY,
       AI_MODEL,
       selectedFiles,
-      prompt
+      prompt,
+      AI_SCHEMA_TEXT
     );
-    console.log('AI API Response:', response);
-    const aiData = [
-      ['a', 'b'],
-      ['c', 'd'],
-    ];
 
     const copiedFile = await copyFile(SHEETS_TEMPLATE_ID);
     if (!copiedFile || !copiedFile.id) {
