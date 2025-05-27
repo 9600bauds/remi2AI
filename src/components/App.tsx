@@ -171,6 +171,7 @@ function App() {
       },
       fields: 'id, webViewLink', // Fields to include in the response (we need the ID of the new copy)
     });
+    console.log("Copyrequest after it finished:", copyRequest)
     return copyRequest.result;
   };
 
@@ -262,6 +263,8 @@ function App() {
       return;
     }
     await writeToSpreadsheet(copiedFile.id, aiData, SHEETS_RANGE);
+    console.log("All done! Result:", copiedFile)
+    window.open(copiedFile.webViewLink)
     setIsAwaitingResponse(false);
   };
 

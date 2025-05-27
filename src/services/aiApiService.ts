@@ -55,7 +55,6 @@ export const sendAiRequest = async (
     let schemaObject: Schema;
     try {
       schemaObject = JSON.parse(schemaText) as Schema;
-      console.log('schema object:', schemaObject);
     } catch (e) {
       console.error('Failed to parse VITE_STRUCTURED_OUTPUT_SCHEMA:', e);
       throw new Error(
