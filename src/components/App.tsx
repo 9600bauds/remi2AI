@@ -6,7 +6,7 @@ import './App.css';
 import { LOCALSTORAGE_TOKEN_KEY } from '../utils/constants';
 
 const SHEETS_TEMPLATE_ID = '1RkI3YNGaywbHT5qANy4TH-JvwioSQ74SQzHT6gR6l1c';
-const SHEETS_RANGE : string = 'Sheet1!B2'
+const SHEETS_RANGE: string = 'Sheet1!B2';
 const DISCOVERY_DOCS = [
   'https://sheets.googleapis.com/$discovery/rest?version=v4',
   'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest',
@@ -20,10 +20,9 @@ const AI_SCHEMA_TEXT = import.meta.env.VITE_STRUCTURED_OUTPUT_SCHEMA;
 function App() {
   const [isGapiClientReady, setIsGapiClientReady] = useState<boolean>(false);
   const [isGoogleSignedIn, setIsGoogleSignedIn] = useState<boolean>(false);
-  const [googleAuthError, setGoogleAuthError] = useState<string | null>(null);
 
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isAwaitingResponse, setIsAwaitingResponse] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
   /**
@@ -39,7 +38,7 @@ function App() {
         setIsGapiClientReady(true);
       } catch (e: unknown) {
         console.error('Error initializing GAPI client:', e);
-        setGoogleAuthError(
+        setError(
           `Failed to initialize GAPI client: ${e instanceof Error ? e.message : 'Unknown error'}`
         );
       }
@@ -58,14 +57,14 @@ function App() {
         onerror: () => {
           const errorMsg = 'Failed to load GAPI client library';
           console.error(errorMsg);
-          setGoogleAuthError(errorMsg);
+          setError(errorMsg);
         },
         timeout: 5000,
         ontimeout: () => {
           const timeoutMsg =
             'GAPI client library could not load in a timely manner';
           console.error(timeoutMsg);
-          setGoogleAuthError(timeoutMsg);
+          setError(timeoutMsg);
         },
       });
     };
@@ -80,14 +79,14 @@ function App() {
     expires_at: number;
   }
   useEffect(() => {
-    if(!isGapiClientReady) return
+    if (!isGapiClientReady) return;
     const storedTokenItem = localStorage.getItem(LOCALSTORAGE_TOKEN_KEY);
     if (storedTokenItem) {
       const storedTokenData = JSON.parse(storedTokenItem) as StoredToken;
-      const tokenIsValid = storedTokenData.token && storedTokenData.expires_at > Date.now();
+      const tokenIsValid =
+        storedTokenData.token && storedTokenData.expires_at > Date.now();
       if (tokenIsValid) {
-        onSignIn(storedTokenData.token
-      )
+        onSignIn(storedTokenData.token);
       } else {
         localStorage.removeItem(LOCALSTORAGE_TOKEN_KEY); // Clean up expired token
       }
@@ -100,23 +99,26 @@ function App() {
   const onSignIn = (token: string) => {
     gapi.client.setToken({ access_token: token });
     setIsGoogleSignedIn(true);
-    setGoogleAuthError(null);
-  }
+    setError(null);
+  };
   const onSignOut = () => {
     gapi.client.setToken(null);
     setIsGoogleSignedIn(false);
     localStorage.removeItem(LOCALSTORAGE_TOKEN_KEY);
-  }
+  };
 
   const googleSignIn = useGoogleLogin({
     onSuccess: (tokenResponse) => {
       console.log('Google Login Success:', tokenResponse);
-      onSignIn(tokenResponse.access_token)
+      onSignIn(tokenResponse.access_token);
       const tokenToStore: StoredToken = {
         token: tokenResponse.access_token,
-        expires_at: Date.now() + (tokenResponse.expires_in * 1000) // expires_in is in seconds
+        expires_at: Date.now() + tokenResponse.expires_in * 1000, // expires_in is in seconds
       };
-      localStorage.setItem(LOCALSTORAGE_TOKEN_KEY, JSON.stringify(tokenToStore));
+      localStorage.setItem(
+        LOCALSTORAGE_TOKEN_KEY,
+        JSON.stringify(tokenToStore)
+      );
     },
     onError: (errorResponse: unknown) => {
       console.error('Google Login Failed:', errorResponse);
@@ -134,16 +136,16 @@ function App() {
         };
         message = err.error_description || err.error;
       }
-      onSignOut()
-      setGoogleAuthError(`Google Login Error: ${message}`);
+      onSignOut();
+      setError(`Google Login Error: ${message}`);
     },
     scope: GAPI_SCOPE,
   });
 
   const googleSignOut = () => {
     googleLogout(); // From @react-oauth/google
-    onSignOut()
-    setGoogleAuthError(null);
+    onSignOut();
+    setError(null);
   };
 
   /**
@@ -202,6 +204,9 @@ function App() {
     return response;
   };
 
+  /**
+   * File picker
+   */
   const handleFilesAdd = (newFiles: File[]) => {
     setSelectedFiles((prevFiles) => {
       const updatedFiles = [...prevFiles];
@@ -238,7 +243,7 @@ function App() {
       return;
     }
 
-    setIsLoading(true);
+    setIsAwaitingResponse(true);
     setError(null);
 
     const prompt = import.meta.env.VITE_PROMPT;
@@ -253,16 +258,80 @@ function App() {
     const copiedFile = await copyFile(SHEETS_TEMPLATE_ID);
     if (!copiedFile || !copiedFile.id) {
       setError('No se pudo copiar el archivo.');
-      setIsLoading(false);
+      setIsAwaitingResponse(false);
       return;
     }
     await writeToSpreadsheet(copiedFile.id, aiData, SHEETS_RANGE);
-    setIsLoading(false);
+    setIsAwaitingResponse(false);
   };
 
+  const generateButton = () => {
+    if (!isGapiClientReady)
+      return (
+        <button
+          type="button"
+          className="btn btn-secondary btn-lg"
+          disabled={true}
+        >
+          <span
+            className="spinner-border spinner-border-sm"
+            role="status"
+            aria-hidden="true"
+          ></span>
+          <span className="ms-2">Cargando API de Google...</span>
+        </button>
+      );
+    else if (!isGoogleSignedIn) {
+      return (
+        <button
+          type="button"
+          className="btn btn-primary btn-lg"
+          onClick={() => googleSignIn()}
+        >
+          Iniciar Sesión para Continuar
+        </button>
+      );
+    } else if (isAwaitingResponse) {
+      return (
+        <button
+          type="button"
+          className="btn btn-secondary btn-lg"
+          disabled={true}
+        >
+          <span
+            className="spinner-border spinner-border-sm"
+            role="status"
+            aria-hidden="true"
+          ></span>
+          <span className="ms-2">Procesando...</span>
+        </button>
+      );
+    } else {
+      return (
+        <button
+          type="button"
+          className="btn btn-primary btn-lg"
+          onClick={handleSubmit}
+          disabled={selectedFiles.length === 0}
+        >
+          {selectedFiles.length === 0 ? (
+            <>Seleccione archivos para continuar</>
+          ) : (
+            <>
+              Procesar {selectedFiles.length} Archivo
+              {selectedFiles.length === 1 ? '' : 's'}
+            </>
+          )}
+        </button>
+      );
+    }
+  };
+  /**
+   * Returned element
+   */
   return (
-    <div className="container mt-4">
-      <header className="text-center mb-4">
+    <div className="container">
+      <header className="text-center mb-2">
         <h1>remi2AI</h1>
         <p className="lead">
           Suba los escaneos de los remitos para digitalizarlos automáticamente.
@@ -279,69 +348,14 @@ function App() {
                 onFileRemove={handleFileRemove}
                 className="mb-3"
               />
-              <div className="d-grid">
-                <button
-                  type="button"
-                  className="btn btn-primary btn-lg"
-                  onClick={handleSubmit}
-                  disabled={selectedFiles.length === 0 || isLoading}
-                >
-                  {isLoading ? (
-                    <>
-                      <span
-                        className="spinner-border spinner-border-sm"
-                        role="status"
-                        aria-hidden="true"
-                      ></span>
-                      <span className="ms-2">Procesando...</span>
-                    </>
-                  ) : (
-                    `Procesar ${selectedFiles.length} Archivo(s)`
-                  )}
-                </button>
-              </div>
             </div>
+
+            <div className="d-grid">{generateButton()}</div>
 
             {error && (
               <div className="alert alert-danger mt-4" role="alert">
                 <strong>Error:</strong> {error}
               </div>
-            )}
-          </div>
-        </div>
-
-        <div className="card shadow-sm mt-4">
-          <div className="card-body">
-            <h5 className="card-title">Google Integration</h5>
-            {!isGapiClientReady && <p>Loading Google API client...</p>}
-            {googleAuthError && (
-              <div className="alert alert-warning" role="alert">
-                {googleAuthError}
-              </div>
-            )}
-            {isGapiClientReady && (
-              <>
-                {!isGoogleSignedIn ? (
-                  <button
-                    type="button"
-                    className="btn btn-success"
-                    onClick={() => googleSignIn()}
-                    disabled={!isGapiClientReady}
-                  >
-                    Sign In with Google
-                  </button>
-                ) : (
-                  <>
-                    <button
-                      type="button"
-                      className="btn btn-outline-danger mb-2"
-                      onClick={googleSignOut}
-                    >
-                      Sign Out
-                    </button>
-                  </>
-                )}
-              </>
             )}
           </div>
         </div>

@@ -1,1 +1,1 @@
-export const LOCALSTORAGE_TOKEN_KEY = "googleUserToken"
+export const LOCALSTORAGE_TOKEN_KEY = 'googleUserToken';
