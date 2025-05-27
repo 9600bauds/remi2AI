@@ -1,10 +1,12 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useGoogleLogin, googleLogout } from '@react-oauth/google';
 import FileUpload from './FileUpload';
 import { sendAiRequest } from '../services/aiApiService';
 import './App.css';
+import { LOCALSTORAGE_TOKEN_KEY } from '../utils/constants';
 
-const SHEETS_TEMPLATE_ID = '1e4AaDW9w5YIWpQ0FuM0Qkz4zA4IzAwNz_yvaZKGGIV8';
+const SHEETS_TEMPLATE_ID = '1RkI3YNGaywbHT5qANy4TH-JvwioSQ74SQzHT6gR6l1c';
+const SHEETS_RANGE : string = 'Sheet1!B2'
 const DISCOVERY_DOCS = [
   'https://sheets.googleapis.com/$discovery/rest?version=v4',
   'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest',
@@ -17,7 +19,6 @@ const AI_SCHEMA_TEXT = import.meta.env.VITE_STRUCTURED_OUTPUT_SCHEMA;
 
 function App() {
   const [isGapiClientReady, setIsGapiClientReady] = useState<boolean>(false);
-  const [accessToken, setAccessToken] = useState<string | null>(null);
   const [isGoogleSignedIn, setIsGoogleSignedIn] = useState<boolean>(false);
   const [googleAuthError, setGoogleAuthError] = useState<string | null>(null);
 
@@ -72,15 +73,50 @@ function App() {
   }, []);
 
   /**
+   * useEffect to automatically re-login from localstorage
+   */
+  interface StoredToken {
+    token: string;
+    expires_at: number;
+  }
+  useEffect(() => {
+    if(!isGapiClientReady) return
+    const storedTokenItem = localStorage.getItem(LOCALSTORAGE_TOKEN_KEY);
+    if (storedTokenItem) {
+      const storedTokenData = JSON.parse(storedTokenItem) as StoredToken;
+      const tokenIsValid = storedTokenData.token && storedTokenData.expires_at > Date.now();
+      if (tokenIsValid) {
+        onSignIn(storedTokenData.token
+      )
+      } else {
+        localStorage.removeItem(LOCALSTORAGE_TOKEN_KEY); // Clean up expired token
+      }
+    }
+  }, [isGapiClientReady]); // Re-run if gapi client becomes ready
+
+  /**
    * Google authentication login/log out
    */
+  const onSignIn = (token: string) => {
+    gapi.client.setToken({ access_token: token });
+    setIsGoogleSignedIn(true);
+    setGoogleAuthError(null);
+  }
+  const onSignOut = () => {
+    gapi.client.setToken(null);
+    setIsGoogleSignedIn(false);
+    localStorage.removeItem(LOCALSTORAGE_TOKEN_KEY);
+  }
+
   const googleSignIn = useGoogleLogin({
     onSuccess: (tokenResponse) => {
       console.log('Google Login Success:', tokenResponse);
-      setAccessToken(tokenResponse.access_token);
-      gapi.client.setToken({ access_token: tokenResponse.access_token });
-      setIsGoogleSignedIn(true);
-      setGoogleAuthError(null);
+      onSignIn(tokenResponse.access_token)
+      const tokenToStore: StoredToken = {
+        token: tokenResponse.access_token,
+        expires_at: Date.now() + (tokenResponse.expires_in * 1000) // expires_in is in seconds
+      };
+      localStorage.setItem(LOCALSTORAGE_TOKEN_KEY, JSON.stringify(tokenToStore));
     },
     onError: (errorResponse: unknown) => {
       console.error('Google Login Failed:', errorResponse);
@@ -98,23 +134,21 @@ function App() {
         };
         message = err.error_description || err.error;
       }
+      onSignOut()
       setGoogleAuthError(`Google Login Error: ${message}`);
-      setIsGoogleSignedIn(false);
-      setAccessToken(null);
-      gapi.client.setToken(null);
     },
     scope: GAPI_SCOPE,
   });
 
   const googleSignOut = () => {
     googleLogout(); // From @react-oauth/google
-    setAccessToken(null);
-    gapi.client.setToken(null); // Clear token from gapi client
-    setIsGoogleSignedIn(false);
+    onSignOut()
     setGoogleAuthError(null);
-    console.log('Signed out from Google.');
   };
 
+  /**
+   * Program functions
+   */
   const copyFile = async (
     fileId: string,
     copyFilename = `Processed Data - ${new Date().toLocaleString()}`
@@ -141,7 +175,7 @@ function App() {
   const writeToSpreadsheet = async (
     spreadsheetID: string,
     dataToWrite: string[][],
-    range: string = 'Sheet1!A1'
+    range: string
   ): Promise<gapi.client.Response<gapi.client.sheets.UpdateValuesResponse>> => {
     if (!gapi || !gapi.client || !gapi.client.sheets) {
       throw new Error(
@@ -222,7 +256,7 @@ function App() {
       setIsLoading(false);
       return;
     }
-    await writeToSpreadsheet(copiedFile.id, aiData);
+    await writeToSpreadsheet(copiedFile.id, aiData, SHEETS_RANGE);
     setIsLoading(false);
   };
 
