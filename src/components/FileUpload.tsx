@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 import { useDropzone, type FileRejection } from 'react-dropzone';
 import { MAX_FILES, MAX_FILESIZE } from '../utils/constants';
 import styles from './FileUpload.module.css';
+import ThumbnailItem from './ThumbnailItem';
 
 interface FileUploadProps {
   selectedFiles: File[];
@@ -40,38 +41,35 @@ const FileUpload: React.FC<FileUploadProps> = ({
     (acceptedFiles: File[]) => {
       void (async () => {
         const updatedFiles = [...selectedFiles];
-
-        // Create a Set of existing file keys for efficient lookup
         const existingFileKeys = new Set(selectedFiles.map(generateFileKey));
 
         for (const newFile of acceptedFiles) {
-          // useDropZone's validation only cares about the files that it's receiving at that moment.
-          // We need to do a few more checks, since we also care about the files that have already been uploaded.
-          if (existingFileKeys.has(generateFileKey(newFile))) {
+          const currentFileKey = generateFileKey(newFile);
+          if (existingFileKeys.has(currentFileKey)) {
             setTemporaryError(
               `El archivo "${newFile.name}" ya ha sido seleccionado.`
             );
             continue;
           }
-          if (updatedFiles.length > maxFiles) {
+          if (updatedFiles.length >= maxFiles) {
             setTemporaryError(
               `No puedes seleccionar más de ${maxFiles} archivos.`
             );
-            continue;
+            break;
           }
 
           updatedFiles.push(newFile);
+          existingFileKeys.add(currentFileKey);
           try {
             const preview = await createImagePreview(newFile);
-            const fileKey = generateFileKey(newFile);
-            setFilePreviews((prev) => ({ ...prev, [fileKey]: preview }));
+            setFilePreviews((prev) => ({ ...prev, [currentFileKey]: preview }));
           } catch (error) {
             console.error('Error creating preview:', error);
           }
         }
 
         onFilesChange(updatedFiles);
-      })(); // Immediately invoke the async function
+      })();
     },
     [selectedFiles, onFilesChange, setTemporaryError, maxFiles]
   );
@@ -110,12 +108,13 @@ const FileUpload: React.FC<FileUploadProps> = ({
     },
   });
 
-  const removeFile = (fileToRemove: File, event: React.MouseEvent) => {
-    // Prevent the dropzone click event when removing files
-    event.stopPropagation();
+  const handleRemoveFile = (fileToRemove: File, event: React.MouseEvent) => {
+    event.stopPropagation(); // Prevent dropzone click
 
     const fileKey = generateFileKey(fileToRemove);
-    const updatedFiles = selectedFiles.filter((file) => file !== fileToRemove);
+    const updatedFiles = selectedFiles.filter(
+      (file) => generateFileKey(file) !== fileKey
+    );
     onFilesChange(updatedFiles);
 
     setFilePreviews((prev) => {
@@ -172,57 +171,14 @@ const FileUpload: React.FC<FileUploadProps> = ({
               {' '}
               {selectedFiles.map((file, index) => {
                 const fileKey = generateFileKey(file);
-                const preview = filePreviews[fileKey];
                 return (
-                  <div
+                  <ThumbnailItem
                     key={fileKey}
-                    className="col-12 col-sm-6 col-lg-4"
-                    id={`thumbnail-item-${index}`}
-                  >
-                    {' '}
-                    <div className="position-relative">
-                      <div
-                        className="ratio ratio-4x3 thumbnail-container border rounded-3 overflow-hidden bg-light d-flex align-items-center justify-content-center w-100"
-                        id={`thumbnail-image-container-${index}`}
-                      >
-                        {preview ? (
-                          <img
-                            src={preview}
-                            alt={file.name}
-                            className={`w-100 h-100 ${styles.thumbnailImage}`}
-                            id={`thumbnail-image-${index}`}
-                          />
-                        ) : (
-                          <div className="text-center text-muted">
-                            <i className="bi bi-image fs-3 mb-1"></i>
-                            <div className="small">Cargando...</div>
-                          </div>
-                        )}
-                      </div>
-
-                      <div
-                        id={`thumbnail-filename-overlay-${index}`}
-                        className={`position-absolute bottom-0 start-0 end-0 bg-dark bg-opacity-75 text-white p-2 ${styles.thumbnailFilenameOverlay}`}
-                      >
-                        <div
-                          className="text-truncate fw-medium"
-                          title={file.name}
-                        >
-                          {file.name}
-                        </div>
-                      </div>
-
-                      <button
-                        id={`thumbnail-remove-button-${index}`}
-                        type="button"
-                        className={`btn btn-danger btn-sm position-absolute top-0 end-0 m-2 rounded-circle d-flex align-items-center justify-content-center ${styles.removeButton}`}
-                        onClick={(e) => removeFile(file, e)}
-                        aria-label={`Quitar ${file.name}`}
-                      >
-                        <i className={`bi bi-x ${styles.removeButtonIcon}`}></i>
-                      </button>
-                    </div>
-                  </div>
+                    file={file}
+                    previewUrl={filePreviews[fileKey]}
+                    onRemove={handleRemoveFile}
+                    index={index}
+                  />
                 );
               })}
             </div>

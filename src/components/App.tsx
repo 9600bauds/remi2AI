@@ -375,7 +375,7 @@ function App() {
    * Returned element
    */
   return (
-    <div className="min-vh-100 bg-light">
+    <div className="d-flex flex-column min-vh-100 bg-light">
       <Header
         appName="remi2AI"
         currentLanguage={currentLanguage}
@@ -386,7 +386,7 @@ function App() {
         onSignOutClick={googleSignOut}
       />
 
-      <main className="container-xl py-4">
+      <main className="container-fluid p-4">
         <div className="row justify-content-center">
           <FileUpload
             selectedFiles={selectedFiles}
