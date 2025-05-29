@@ -30,6 +30,7 @@ function App() {
 
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [isAwaitingResponse, setIsAwaitingResponse] = useState<boolean>(false);
+  const [highlightButton, setHighlightButton] = useState<boolean>(false);
   const [successLink, setSuccessLink] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [errorTimeout, setErrorTimeout] = useState<NodeJS.Timeout | null>(null);
@@ -109,6 +110,9 @@ function App() {
     gapi.client.setToken({ access_token: token });
     setIsGoogleSignedIn(true);
     setError(null);
+    if (selectedFiles.length > 0) {
+      setHighlightButton(true);
+    }
   };
   const onSignOut = () => {
     gapi.client.setToken(null);
@@ -265,6 +269,7 @@ function App() {
 
     setIsAwaitingResponse(true);
     setError(null);
+    setHighlightButton(false);
 
     try {
       const prompt = import.meta.env.VITE_PROMPT;
@@ -318,7 +323,7 @@ function App() {
       return (
         <button
           type="button"
-          className="btn btn-success btn-lg"
+          className="btn btn-primary btn-lg"
           onClick={() => googleSignIn()}
         >
           <i className="bi bi-google me-2"></i>
@@ -340,22 +345,27 @@ function App() {
           <span className="ms-2">Procesando...</span>
         </button>
       );
+    } else if (selectedFiles.length === 0) {
+      return (
+        <button
+          type="button"
+          className="btn btn-secondary btn-lg"
+          onClick={handleSubmit}
+          disabled={selectedFiles.length === 0}
+        >
+          Seleccione archivos para continuar
+        </button>
+      );
     } else {
       return (
         <button
           type="button"
-          className="btn btn-primary btn-lg"
+          className={`btn btn-primary btn-lg ${highlightButton ? 'btn-breathing-highlight' : ''}`}
           onClick={handleSubmit}
           disabled={selectedFiles.length === 0}
         >
-          {selectedFiles.length === 0 ? (
-            <>Seleccione archivos para continuar</>
-          ) : (
-            <>
-              Procesar {selectedFiles.length} Archivo
-              {selectedFiles.length === 1 ? '' : 's'}
-            </>
-          )}
+          Procesar {selectedFiles.length} Archivo
+          {selectedFiles.length === 1 ? '' : 's'}
         </button>
       );
     }

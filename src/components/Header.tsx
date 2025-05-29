@@ -78,12 +78,13 @@ const Header: React.FC<HeaderProps> = ({
                   className="btn btn-outline-warning btn-sm"
                   onClick={onSignOutClick}
                 >
+                  <i className="bi bi-google me-2"></i>
                   Cerrar Sesión
                 </button>
               ) : (
                 <button
                   type="button"
-                  className="btn btn-success btn-sm"
+                  className="btn btn-primary btn-sm"
                   onClick={onSignInClick}
                 >
                   <i className="bi bi-google me-2"></i>
