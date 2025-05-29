@@ -4,6 +4,8 @@ import FileUpload from './FileUpload';
 import { sendAiRequest } from '../services/aiApiService';
 import './App.css';
 import { LOCALSTORAGE_TOKEN_KEY } from '../utils/constants';
+import type { SupportedLanguage } from '../types/SupportedLanguage';
+import Header from './Header';
 
 const SHEETS_TEMPLATE_ID = '1RkI3YNGaywbHT5qANy4TH-JvwioSQ74SQzHT6gR6l1c';
 const SHEETS_RANGE: string = 'Sheet1!B2';
@@ -21,8 +23,14 @@ function App() {
   const [isGapiClientReady, setIsGapiClientReady] = useState<boolean>(false);
   const [isGoogleSignedIn, setIsGoogleSignedIn] = useState<boolean>(false);
 
+  const [currentLanguage, setCurrentLanguage] =
+    useState<SupportedLanguage>('en');
+  const [isSettingsModalOpen, setIsSettingsModalOpen] =
+    useState<boolean>(false);
+
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [isAwaitingResponse, setIsAwaitingResponse] = useState<boolean>(false);
+  const [successLink, setSuccessLink] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   /**
@@ -148,6 +156,27 @@ function App() {
     setError(null);
   };
 
+  const handleLanguageChange = (lang: SupportedLanguage) => {
+    setCurrentLanguage(lang);
+    // TODO: Implement actual translation loading based on `lang`
+    // For now, just log it and update state
+    console.log(`Language changed to: ${lang}`);
+    localStorage.setItem('preferredLang', lang); // Store preference
+  };
+
+  // Load language preference on initial mount
+  useEffect(() => {
+    const preferredLang = localStorage.getItem('preferredLang');
+    if (preferredLang && (preferredLang === 'en' || preferredLang === 'es')) {
+      //Todo: How to check if the stored language is anything of type SupportedLanguage?
+      setCurrentLanguage(preferredLang);
+    }
+  }, []);
+
+  const toggleSettingsModal = () => {
+    setIsSettingsModalOpen(!isSettingsModalOpen);
+  };
+
   /**
    * Program functions
    */
@@ -171,7 +200,7 @@ function App() {
       },
       fields: 'id, webViewLink', // Fields to include in the response (we need the ID of the new copy)
     });
-    console.log("Copyrequest after it finished:", copyRequest)
+    console.log('Copyrequest after it finished:', copyRequest);
     return copyRequest.result;
   };
 
@@ -263,9 +292,12 @@ function App() {
       return;
     }
     await writeToSpreadsheet(copiedFile.id, aiData, SHEETS_RANGE);
-    console.log("All done! Result:", copiedFile)
-    window.open(copiedFile.webViewLink)
+    if (copiedFile.webViewLink) {
+      setSuccessLink(copiedFile.webViewLink);
+      window.open(copiedFile.webViewLink);
+    }
     setIsAwaitingResponse(false);
+    setError(null);
   };
 
   const generateButton = () => {
@@ -291,7 +323,8 @@ function App() {
           className="btn btn-primary btn-lg"
           onClick={() => googleSignIn()}
         >
-          Iniciar Sesión para Continuar
+          <i className="bi bi-google me-1"></i>
+          Inicie Sesión para Continuar
         </button>
       );
     } else if (isAwaitingResponse) {
@@ -333,31 +366,66 @@ function App() {
    * Returned element
    */
   return (
-    <div className="container">
-      <header className="text-center mb-2">
-        <h1>remi2AI</h1>
-        <p className="lead">
-          Suba los escaneos de los remitos para digitalizarlos automáticamente.
-        </p>
-      </header>
+    <div className="min-vh-100 bg-light">
+      <Header
+        appName="remi2AI"
+        currentLanguage={currentLanguage}
+        onLanguageChange={handleLanguageChange}
+        onToggleSettings={toggleSettingsModal}
+        isGoogleSignedIn={isGoogleSignedIn}
+        onSignInClick={googleSignIn}
+        onSignOutClick={googleSignOut}
+      />
 
-      <main>
+      <main className="container py-4">
         <div className="row justify-content-center">
-          <div className="col-md-10 col-lg-8">
-            <div className="card shadow-sm">
+          <div className="col-12 col-md-10 col-lg-8 col-xl-6">
+            {/* File Upload Section */}
+            <div className="card shadow-sm border-0 mb-4">
               <FileUpload
                 selectedFiles={selectedFiles}
                 onFilesAdd={handleFilesAdd}
                 onFileRemove={handleFileRemove}
-                className="mb-3"
               />
             </div>
 
-            <div className="d-grid">{generateButton()}</div>
+            <div className="d-flex justify-content-center mb-4">
+              {generateButton()}
+            </div>
 
             {error && (
-              <div className="alert alert-danger mt-4" role="alert">
-                <strong>Error:</strong> {error}
+              <div
+                className="alert alert-danger d-flex align-items-center mb-4"
+                role="alert"
+              >
+                <i className="bi bi-exclamation-triangle-fill me-2"></i>
+                <div>
+                  <strong>Error:</strong> {error}
+                </div>
+              </div>
+            )}
+
+            {successLink && !error && (
+              <div
+                className="alert alert-success d-flex align-items-center justify-content-between mb-4"
+                role="alert"
+              >
+                <div className="d-flex align-items-center">
+                  <i className="bi bi-check-circle-fill me-2"></i>
+                  <div>
+                    <strong>Processing Complete!</strong> Your data has been
+                    processed successfully.
+                  </div>
+                </div>
+                <a
+                  href={successLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn btn-success btn-sm ms-3"
+                >
+                  <i className="bi bi-box-arrow-up-right me-1"></i>
+                  Open Spreadsheet
+                </a>
               </div>
             )}
           </div>
