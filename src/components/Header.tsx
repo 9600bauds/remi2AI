@@ -86,7 +86,7 @@ const Header: React.FC<HeaderProps> = ({
                   className="btn btn-success btn-sm"
                   onClick={onSignInClick}
                 >
-                  <i className="bi bi-google me-1"></i>
+                  <i className="bi bi-google me-2"></i>
                   Iniciar Sesión
                 </button>
               )}

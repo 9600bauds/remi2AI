@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useGoogleLogin, googleLogout } from '@react-oauth/google';
-import FileUpload from './FileUpload';
 import { sendAiRequest } from '../services/aiApiService';
 import './App.css';
 import { LOCALSTORAGE_TOKEN_KEY } from '../utils/constants';
 import type { SupportedLanguage } from '../types/SupportedLanguage';
 import Header from './Header';
+import FileUpload from './FileUpload';
 
 const SHEETS_TEMPLATE_ID = '1RkI3YNGaywbHT5qANy4TH-JvwioSQ74SQzHT6gR6l1c';
 const SHEETS_RANGE: string = 'Sheet1!B2';
@@ -32,6 +32,7 @@ function App() {
   const [isAwaitingResponse, setIsAwaitingResponse] = useState<boolean>(false);
   const [successLink, setSuccessLink] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [errorTimeout, setErrorTimeout] = useState<NodeJS.Timeout | null>(null);
 
   /**
    * Google API load/init
@@ -177,6 +178,24 @@ function App() {
     setIsSettingsModalOpen(!isSettingsModalOpen);
   };
 
+  const setTemporaryError = (
+    message: string | null,
+    duration: number = 4000
+  ) => {
+    if (errorTimeout) {
+      clearTimeout(errorTimeout); // Clear any existing timeout
+    }
+    setError(message);
+    if (message) {
+      // Only set a timeout if there's a message
+      const newTimeoutId = setTimeout(() => {
+        setError(null);
+        setErrorTimeout(null);
+      }, duration);
+      setErrorTimeout(newTimeoutId);
+    }
+  };
+
   /**
    * Program functions
    */
@@ -196,7 +215,7 @@ function App() {
     const copyRequest = await gapi.client.drive.files.copy({
       fileId,
       resource: {
-        name: copyFilename, // Todo: Typescript doesn't like what I'm doing here, even though it works
+        name: copyFilename,
       },
       fields: 'id, webViewLink', // Fields to include in the response (we need the ID of the new copy)
     });
@@ -225,42 +244,13 @@ function App() {
     const response = await gapi.client.sheets.spreadsheets.values.update({
       spreadsheetId: spreadsheetID,
       range,
-      valueInputOption: 'USER_ENTERED', // What exacly is this?
+      valueInputOption: 'USER_ENTERED',
       resource: {
         values: dataToWrite,
       },
     });
 
     return response;
-  };
-
-  /**
-   * File picker
-   */
-  const handleFilesAdd = (newFiles: File[]) => {
-    setSelectedFiles((prevFiles) => {
-      const updatedFiles = [...prevFiles];
-      newFiles.forEach((newFile) => {
-        const alreadyExists = prevFiles.some(
-          (pf) =>
-            pf.name === newFile.name &&
-            pf.size === newFile.size &&
-            pf.lastModified === newFile.lastModified
-        );
-        if (!alreadyExists) {
-          updatedFiles.push(newFile);
-        }
-      });
-      return updatedFiles;
-    });
-    setError(null);
-  };
-
-  const handleFileRemove = (fileToRemove: File) => {
-    setSelectedFiles((prevFiles) =>
-      prevFiles.filter((file) => file !== fileToRemove)
-    );
-    setError(null);
   };
 
   const handleSubmit = async () => {
@@ -276,28 +266,36 @@ function App() {
     setIsAwaitingResponse(true);
     setError(null);
 
-    const prompt = import.meta.env.VITE_PROMPT;
-    const aiData = await sendAiRequest(
-      API_KEY,
-      AI_MODEL,
-      selectedFiles,
-      prompt,
-      AI_SCHEMA_TEXT
-    );
+    try {
+      const prompt = import.meta.env.VITE_PROMPT;
+      const aiData = await sendAiRequest(
+        API_KEY,
+        AI_MODEL,
+        selectedFiles,
+        prompt,
+        AI_SCHEMA_TEXT
+      );
 
-    const copiedFile = await copyFile(SHEETS_TEMPLATE_ID);
-    if (!copiedFile || !copiedFile.id) {
-      setError('No se pudo copiar el archivo.');
+      const copiedFile = await copyFile(SHEETS_TEMPLATE_ID);
+      if (!copiedFile || !copiedFile.id) {
+        setError('No se pudo copiar el archivo.');
+        setIsAwaitingResponse(false);
+        return;
+      }
+      await writeToSpreadsheet(copiedFile.id, aiData, SHEETS_RANGE);
+      if (copiedFile.webViewLink) {
+        setSuccessLink(copiedFile.webViewLink);
+        window.open(copiedFile.webViewLink);
+      }
       setIsAwaitingResponse(false);
-      return;
+      setError(null);
+    } catch (err) {
+      console.error('Error during processing:', err);
+      setError(
+        err instanceof Error ? err.message : 'An unknown error occurred'
+      );
+      setIsAwaitingResponse(false);
     }
-    await writeToSpreadsheet(copiedFile.id, aiData, SHEETS_RANGE);
-    if (copiedFile.webViewLink) {
-      setSuccessLink(copiedFile.webViewLink);
-      window.open(copiedFile.webViewLink);
-    }
-    setIsAwaitingResponse(false);
-    setError(null);
   };
 
   const generateButton = () => {
@@ -320,10 +318,10 @@ function App() {
       return (
         <button
           type="button"
-          className="btn btn-primary btn-lg"
+          className="btn btn-success btn-lg"
           onClick={() => googleSignIn()}
         >
-          <i className="bi bi-google me-1"></i>
+          <i className="bi bi-google me-2"></i>
           Inicie Sesión para Continuar
         </button>
       );
@@ -362,6 +360,7 @@ function App() {
       );
     }
   };
+
   /**
    * Returned element
    */
@@ -380,18 +379,14 @@ function App() {
       <main className="container py-4">
         <div className="row justify-content-center">
           <div className="col-12 col-md-10 col-lg-8 col-xl-6">
-            {/* File Upload Section */}
-            <div className="card shadow-sm border-0 mb-4">
-              <FileUpload
-                selectedFiles={selectedFiles}
-                onFilesAdd={handleFilesAdd}
-                onFileRemove={handleFileRemove}
-              />
-            </div>
-
-            <div className="d-flex justify-content-center mb-4">
-              {generateButton()}
-            </div>
+            {/* File Upload Component */}
+            <FileUpload
+              selectedFiles={selectedFiles}
+              onFilesChange={setSelectedFiles}
+              setTemporaryError={setTemporaryError}
+              maxFiles={3}
+              maxSize={10 * 1024 * 1024}
+            />
 
             {error && (
               <div
@@ -428,6 +423,10 @@ function App() {
                 </a>
               </div>
             )}
+
+            <div className="d-flex justify-content-center mb-4">
+              {generateButton()}
+            </div>
           </div>
         </div>
       </main>
