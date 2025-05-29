@@ -1,0 +1,91 @@
+{
+  "appName": "remi2AI",
+  "appLead": "Upload your delivery slip scans to digitize them automatically.",
+  "header": {
+    "settings": "Settings",
+    "settingsAriaLabel": "Open application settings",
+    "signIn": "Sign In",
+    "signOut": "Sign Out",
+    "languageSelectionLabel": "Language selection"
+  },
+  "fileUpload": {
+    "dragOrClick": "Drag images here or click to select",
+    "formats": "Formats: PNG, JPG, JPEG, WebP (max. {{maxSizeMB}}MB each)",
+    "limit": "Limit: {{maxFiles}} images",
+    "addMore": "Click or drag up to {{count}} more image(s)",
+    "addMore_one": "Click or drag up to 1 more image",
+    "dropFilesHere": "Drop files here",
+    "toAddToSelection": "To add to your selection",
+    "loadingPreview": "Loading...",
+    "removeFile": "Remove {{fileName}}",
+    "defaultCopyName": "Processed Data - {{dateTime}}",
+    "errorNoFilesSelected": "Please select one or more files.",
+    "errorFileTooLarge": "File \"{{fileName}}\" is too large (max. {{maxSizeMB}}MB).",
+    "errorInvalidType": "File \"{{fileName}}\" has an invalid format.",
+    "errorTooManyFiles": "You cannot select more than {{maxFiles}} files.",
+    "errorAlreadySelected": "File \"{{fileName}}\" has already been selected.",
+    "errorGeneric": "Error with file \"{{fileName}}\": {{message}}",
+    "errorPreviewGeneric": "Could not generate preview for {{fileName}}"
+  },
+  "buttons": {
+    "process": "Process {{count}} File(s)",
+    "process_one": "Process 1 File",
+    "processing": "Processing...",
+    "selectFilesToContinue": "Select files to continue",
+    "signInToContinue": "Sign In to Continue",
+    "loadingGoogleApi": "Loading Google API..."
+  },
+  "messages": {
+    "error": "Error",
+    "success": "Success",
+    "warning": "Warning",
+    "info": "Info",
+    "loading": "Loading...",
+    "pleaseWait": "Please wait...",
+    "processingComplete": "Processing Complete!",
+    "dataProcessed": "Your data has been processed successfully.",
+    "openSpreadsheet": "Open Spreadsheet",
+    "errorCopyFile": "Could not copy the template file.",
+    "errorGapiInit": "Failed to initialize Google services: {{message}}",
+    "errorGapiLoad": "Failed to load Google services library.",
+    "errorGapiTimeout": "Google services library could not load in time.",
+    "errorGoogleLogin": "Google Login Error: {{message}}",
+    "errorGoogleLoginUnknown": "Google login failed for an unknown reason.",
+    "errorGoogleLoginWithMessage": "Google Login Error: {{message}}",
+    "errorLoginDefaultDetail": "An authentication issue occurred.",
+    "errorSignInRequired": "Please sign in to continue.",
+    "errorProcessingGeneric": "An error occurred during processing: {{message}}",
+    "errorGapiClientNotReady": "Google API client is not ready. Please sign in again.",
+    "errorAccessTokenMissing": "Google access token is missing. Please sign in again.",
+    "errorNoDataToWrite": "No data was provided to write to the sheet.",
+    "errorUnknown": "An unknown error occurred. Please try again.",
+    "errorNetwork": "A network error occurred. Please check your connection and try again.",
+    "errorAIResponse": "The AI service returned an unexpected response or no data.",
+    "errorAISchema": "The AI service response did not match the expected data structure.",
+    "errorSDK": "An SDK error occurred: {{message}}"
+  },
+  "settingsModal": {
+    "title": "Application Settings",
+    "languageLabel": "Language",
+    "promptLabel": "AI Prompt",
+    "promptDescription": "Define the instructions for the AI to extract data. (Advanced)",
+    "templateIdLabel": "Google Sheets Template ID",
+    "templateIdDescription": "ID of your custom Google Sheet template to use.",
+    "saveButton": "Save Settings",
+    "cancelButton": "Cancel",
+    "settingsSaved": "Settings saved successfully!"
+  },
+  "thumbnailItem": {
+    "altText": "Preview of {{fileName}}"
+  },
+  "common": {
+    "yes": "Yes",
+    "no": "No",
+    "ok": "OK",
+    "cancel": "Cancel",
+    "close": "Close",
+    "save": "Save",
+    "delete": "Delete",
+    "confirm": "Confirm"
+  }
+}
