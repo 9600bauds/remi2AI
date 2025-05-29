@@ -1,9 +1,9 @@
 // src/components/Header.tsx
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import type { SupportedLanguage } from '../types/SupportedLanguage';
 
 interface HeaderProps {
-  appName: string;
   currentLanguage: SupportedLanguage;
   onLanguageChange: (lang: SupportedLanguage) => void;
   onToggleSettings: () => void;
@@ -13,7 +13,6 @@ interface HeaderProps {
 }
 
 const Header: React.FC<HeaderProps> = ({
-  appName,
   currentLanguage,
   onLanguageChange,
   onToggleSettings,
@@ -21,6 +20,8 @@ const Header: React.FC<HeaderProps> = ({
   onSignInClick,
   onSignOutClick,
 }) => {
+  const { t } = useTranslation();
+
   return (
     <nav className="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
       <div className="container-xl">
@@ -32,15 +33,16 @@ const Header: React.FC<HeaderProps> = ({
         <div className="d-flex justify-content-between align-items-center w-100">
           <div className="navbar-brand fw-bold d-flex align-items-center">
             <i className="bi bi-robot me-2"></i>
-            {appName}
+            {t('appName')}
           </div>
 
           <div className="navbar-nav d-flex flex-row align-items-center">
+            <i className="bi bi-translate m-1 text-white"></i>
             <div className="nav-item me-3">
               <div
                 className="btn-group"
                 role="group"
-                aria-label="Language selection"
+                aria-label={t('header.languageSelectionLabel')}
               >
                 <button
                   type="button"
@@ -65,7 +67,7 @@ const Header: React.FC<HeaderProps> = ({
                 type="button"
                 className="btn btn-outline-light btn-sm"
                 onClick={onToggleSettings}
-                aria-label="Settings"
+                aria-label={t('header.settingsAriaLabel')}
               >
                 <i className="bi bi-gear-fill"></i>
               </button>
@@ -79,7 +81,7 @@ const Header: React.FC<HeaderProps> = ({
                   onClick={onSignOutClick}
                 >
                   <i className="bi bi-google me-2"></i>
-                  Cerrar Sesión
+                  {t('header.signOut')}
                 </button>
               ) : (
                 <button
@@ -88,7 +90,7 @@ const Header: React.FC<HeaderProps> = ({
                   onClick={onSignInClick}
                 >
                   <i className="bi bi-google me-2"></i>
-                  Iniciar Sesión
+                  {t('header.signIn')}
                 </button>
               )}
             </div>

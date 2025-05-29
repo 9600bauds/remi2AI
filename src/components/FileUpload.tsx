@@ -1,13 +1,16 @@
+// src/components/FileUpload.tsx
 import { useCallback, useState } from 'react';
 import { useDropzone, type FileRejection } from 'react-dropzone';
+import { useTranslation } from 'react-i18next'; // Import useTranslation
 import { MAX_FILES, MAX_FILESIZE } from '../utils/constants';
 import styles from './FileUpload.module.css';
-import ThumbnailItem from './ThumbnailItem';
+import ThumbnailItem from './ThumbnailItem'; // Assuming ThumbnailItem is also updated or doesn't have text
+import type { LocalizedError } from '../types/LocalizedError';
 
 interface FileUploadProps {
   selectedFiles: File[];
   onFilesChange: (files: File[]) => void;
-  setTemporaryError: (error: string | null) => void;
+  setTemporaryError: (errorValue: LocalizedError, duration?: number) => void;
   maxFiles?: number;
   maxSize?: number;
 }
@@ -19,6 +22,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
   maxFiles = MAX_FILES,
   maxSize = MAX_FILESIZE,
 }) => {
+  const { t } = useTranslation(); // Initialize the t function
   const [filePreviews, setFilePreviews] = useState<{ [key: string]: string }>(
     {}
   );
@@ -46,15 +50,17 @@ const FileUpload: React.FC<FileUploadProps> = ({
         for (const newFile of acceptedFiles) {
           const currentFileKey = generateFileKey(newFile);
           if (existingFileKeys.has(currentFileKey)) {
-            setTemporaryError(
-              `El archivo "${newFile.name}" ya ha sido seleccionado.`
-            );
+            setTemporaryError({
+              key: 'fileUpload.errorAlreadySelected',
+              params: { fileName: newFile.name },
+            });
             continue;
           }
           if (updatedFiles.length >= maxFiles) {
-            setTemporaryError(
-              `No puedes seleccionar más de ${maxFiles} archivos.`
-            );
+            setTemporaryError({
+              key: 'fileUpload.errorTooManyFiles',
+              params: { maxFiles: maxFiles },
+            });
             break;
           }
 
@@ -67,7 +73,6 @@ const FileUpload: React.FC<FileUploadProps> = ({
             console.error('Error creating preview:', error);
           }
         }
-
         onFilesChange(updatedFiles);
       })();
     },
@@ -82,26 +87,38 @@ const FileUpload: React.FC<FileUploadProps> = ({
     multiple: true,
     maxFiles,
     maxSize,
-    noClick: false,
+    noClick: false, // Keep true if you want to trigger file dialog only from a separate button
     onDropRejected: (fileRejections: FileRejection[]) => {
       fileRejections.forEach(({ file, errors }) => {
         errors.forEach((err) => {
+          const params = {
+            fileName: file.name,
+            maxSizeMB: (maxSize / 1024 / 1024).toFixed(1), // Format for display
+            maxFiles: maxFiles,
+          };
           if (err.code === 'file-too-large') {
-            setTemporaryError(
-              `El archivo "${file.name}" es demasiado grande (máx. ${maxSize / 1024 / 1024}MB).`
-            );
+            setTemporaryError({
+              key: 'fileUpload.errorFileTooLarge',
+              params,
+            });
           } else if (err.code === 'file-invalid-type') {
-            setTemporaryError(
-              `El archivo "${file.name}" tiene un formato no válido.`
-            );
+            setTemporaryError({
+              key: 'fileUpload.errorInvalidType',
+              params,
+            });
           } else if (err.code === 'too-many-files') {
-            setTemporaryError(
-              `No puedes seleccionar más de ${maxFiles} archivos.`
-            );
+            setTemporaryError({
+              key: 'fileUpload.errorTooManyFiles',
+              params,
+            });
           } else {
-            setTemporaryError(
-              `Error con el archivo "${file.name}": ${err.message}`
-            );
+            setTemporaryError({
+              key: 'fileUpload.errorGeneric',
+              params: {
+                fileName: file.name,
+                message: err.message,
+              },
+            });
           }
         });
       });
@@ -119,24 +136,26 @@ const FileUpload: React.FC<FileUploadProps> = ({
 
     setFilePreviews((prev) => {
       const updated = { ...prev };
-      delete updated[fileKey];
+      delete updated[fileKey]; // Remove preview
+      // URL.revokeObjectURL(previewUrl) if you were using createObjectURL
       return updated;
     });
   };
+
+  const remainingSlots = maxFiles - selectedFiles.length;
 
   return (
     <div
       {...getRootProps()}
       id="file-dropzone-container"
       className={`
-        card shadow-sm border-2 mb-4 
+        card shadow-sm border-2 mb-4
         ${styles.dropzoneContainer}
         ${isDragActive ? `border-primary bg-primary bg-opacity-10 ${styles.dropzoneContainerActive}` : 'border-secondary-subtle'}
       `}
     >
-      <input {...getInputProps({ id: 'file-input-element' })} />{' '}
+      <input {...getInputProps({ id: 'file-input-element' })} />
       <div className="card-body" id="file-dropzone-card-body">
-        {' '}
         {isDragActive && (
           <div
             id="drag-active-overlay"
@@ -144,8 +163,10 @@ const FileUpload: React.FC<FileUploadProps> = ({
           >
             <div className="text-center p-4 bg-primary text-white rounded-4 shadow-lg">
               <i className="bi bi-cloud-upload fs-1 mb-3"></i>
-              <h4 className="mb-2">Suelta los archivos aquí</h4>
-              <p className="mb-0 opacity-75">Para añadir a tu selección</p>
+              <h4 className="mb-2">{t('fileUpload.dropFilesHere')}</h4>
+              <p className="mb-0 opacity-75">
+                {t('fileUpload.toAddToSelection')}
+              </p>
             </div>
           </div>
         )}
@@ -155,20 +176,18 @@ const FileUpload: React.FC<FileUploadProps> = ({
             className="d-flex flex-column align-items-center justify-content-center text-center py-5"
           >
             <i className="bi bi-cloud-upload fs-1 mb-4 text-secondary"></i>
-            <h4 className="mb-3 fw-bold">
-              Arrastra imágenes aquí o haz clic para seleccionar
-            </h4>
+            <h4 className="mb-3 fw-bold">{t('fileUpload.dragOrClick')}</h4>
             <p className="mb-0 text-muted">
-              Formatos: PNG, JPG, JPEG, WebP (máx. {maxSize / 1024 / 1024}MB
-              cada una)
+              {t('fileUpload.formats', {
+                maxSizeMB: (maxSize / 1024 / 1024).toFixed(1),
+              })}
               <br />
-              Límite: {maxFiles} imágenes
+              {t('fileUpload.limit', { maxFiles: maxFiles })}
             </p>
           </div>
         ) : (
           <>
             <div className="row g-3 mb-3" id="thumbnail-grid">
-              {' '}
               {selectedFiles.map((file, index) => {
                 const fileKey = generateFileKey(file);
                 return (
@@ -191,11 +210,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
                 <div className="d-flex align-items-center justify-content-center text-muted">
                   <i className="bi bi-plus-circle fs-5 me-2"></i>
                   <span>
-                    Haz clic o arrastra hasta {maxFiles - selectedFiles.length}{' '}
-                    {maxFiles - selectedFiles.length > 1
-                      ? 'imágenes'
-                      : 'imagen'}{' '}
-                    más
+                    {t('fileUpload.addMore', { count: remainingSlots })}
                   </span>
                 </div>
               </div>

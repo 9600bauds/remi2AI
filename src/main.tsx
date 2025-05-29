@@ -5,6 +5,7 @@ import App from './components/App.tsx';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import { GoogleOAuthProvider } from '@react-oauth/google';
+import './i18n';
 
 const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 

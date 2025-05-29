@@ -1,0 +1,91 @@
+{
+  "appName": "remi2AI",
+  "appLead": "Suba los escaneos de sus remitos para digitalizarlos automáticamente.",
+  "header": {
+    "settings": "Configuración",
+    "settingsAriaLabel": "Abrir configuración de la aplicación",
+    "signIn": "Iniciar Sesión",
+    "signOut": "Cerrar Sesión",
+    "languageSelectionLabel": "Selección de idioma"
+  },
+  "fileUpload": {
+    "dragOrClick": "Arrastrá las imágenes acá o hacé clic para seleccionar",
+    "formats": "Formatos: PNG, JPG, JPEG, WebP (máx. {{maxSizeMB}}MB c/u)",
+    "limit": "Límite: {{maxFiles}} imágenes",
+    "addMore": "Hacé clic o arrastrá hasta {{count}} imágenes más",
+    "addMore_one": "Hacé clic o arrastrá hasta 1 imagen más",
+    "dropFilesHere": "Soltá los archivos acá",
+    "toAddToSelection": "Para agregar a tu selección",
+    "loadingPreview": "Cargando...",
+    "removeFile": "Quitar {{fileName}}",
+    "defaultCopyName": "Datos Procesados - {{dateTime}}",
+    "errorNoFilesSelected": "Por favor seleccione uno o más archivos.",
+    "errorFileTooLarge": "El archivo \"{{fileName}}\" es muy grande (máx. {{maxSizeMB}}MB).",
+    "errorInvalidType": "El archivo \"{{fileName}}\" tiene un formato no válido.",
+    "errorTooManyFiles": "No podés seleccionar más de {{maxFiles}} archivos.",
+    "errorAlreadySelected": "El archivo \"{{fileName}}\" ya lo seleccionaste.",
+    "errorGeneric": "Error con el archivo \"{{fileName}}\": {{message}}",
+    "errorPreviewGeneric": "No se pudo generar la vista previa para {{fileName}}"
+  },
+  "buttons": {
+    "process": "Procesar {{count}} Archivo(s)",
+    "process_one": "Procesar 1 Archivo",
+    "processing": "Procesando...",
+    "selectFilesToContinue": "Seleccione archivos para continuar",
+    "signInToContinue": "Inicie Sesión para Continuar",
+    "loadingGoogleApi": "Cargando API de Google..."
+  },
+  "messages": {
+    "error": "Error",
+    "success": "Éxito",
+    "warning": "Advertencia",
+    "info": "Información",
+    "loading": "Cargando...",
+    "pleaseWait": "Por favor espere...",
+    "processingComplete": "Procesamiento Completo!",
+    "dataProcessed": "Sus datos han sido procesados exitosamente.",
+    "openSpreadsheet": "Abrir Hoja de Cálculo",
+    "errorCopyFile": "No se pudo copiar el archivo de plantilla.",
+    "errorGapiInit": "Fallo al inicializar los servicios de Google: {{message}}",
+    "errorGapiLoad": "Fallo al cargar la librería de servicios de Google.",
+    "errorGapiTimeout": "La librería de servicios de Google no pudo cargar a tiempo.",
+    "errorGoogleLogin": "Error de Inicio de Sesión con Google: {{message}}",
+    "errorGoogleLoginUnknown": "El inicio de sesión con Google falló por una razón desconocida.",
+    "errorGoogleLoginWithMessage": "Error de Inicio de Sesión con Google: {{message}}",
+    "errorLoginDefaultDetail": "Ocurrió un problema de autenticación.",
+    "errorSignInRequired": "Por favor inicie sesión para continuar.",
+    "errorProcessingGeneric": "Ocurrió un error durante el procesamiento: {{message}}",
+    "errorGapiClientNotReady": "El cliente API de Google no está listo. Por favor inicie sesión de nuevo.",
+    "errorAccessTokenMissing": "Falta el token de acceso de Google. Por favor inicie sesión de nuevo.",
+    "errorNoDataToWrite": "No se proporcionaron datos para escribir en la hoja.",
+    "errorUnknown": "Ocurrió un error desconocido. Por favor, inténtelo de nuevo.",
+    "errorNetwork": "Ocurrió un error de red. Por favor, revise su conexión e inténtelo de nuevo.",
+    "errorAIResponse": "El servicio de IA devolvió una respuesta inesperada o ningún dato.",
+    "errorAISchema": "La respuesta del servicio de IA no coincidió con la estructura de datos esperada.",
+    "errorSDK": "Ocurrió un error del SDK: {{message}}"
+  },
+  "settingsModal": {
+    "title": "Configuración de la Aplicación",
+    "languageLabel": "Idioma",
+    "promptLabel": "Prompt para IA",
+    "promptDescription": "Defina las instrucciones para que la IA extraiga datos. (Avanzado)",
+    "templateIdLabel": "ID de Plantilla de Google Sheets",
+    "templateIdDescription": "ID de su plantilla personalizada de Google Sheet a utilizar.",
+    "saveButton": "Guardar Configuración",
+    "cancelButton": "Cancelar",
+    "settingsSaved": "Configuración guardada exitosamente!"
+  },
+  "thumbnailItem": {
+    "altText": "Vista previa de {{fileName}}"
+  },
+  "common": {
+    "yes": "Sí",
+    "no": "No",
+    "ok": "Aceptar",
+    "cancel": "Cancelar",
+    "close": "Cerrar",
+    "save": "Guardar",
+    "delete": "Eliminar",
+    "confirm": "Confirmar"
+  }
+}
