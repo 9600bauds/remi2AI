@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react';
-import { useDropzone, type FileRejection } from 'react-dropzone'; // Import types
+import { useDropzone, type FileRejection } from 'react-dropzone';
 import { MAX_FILES, MAX_FILESIZE } from '../utils/constants';
+import styles from './FileUpload.module.css';
 
 interface FileUploadProps {
   selectedFiles: File[];
@@ -127,30 +128,20 @@ const FileUpload: React.FC<FileUploadProps> = ({
   return (
     <div
       {...getRootProps()}
-      className={`card shadow-sm border-2 mb-4 ${
-        isDragActive
-          ? 'border-primary bg-primary bg-opacity-10'
-          : 'border-secondary-subtle'
-      }`}
-      style={{
-        cursor: 'pointer',
-        transition: 'all 0.2s ease-in-out',
-        minHeight: selectedFiles.length > 0 ? 'auto' : '300px',
-      }}
+      id="file-dropzone-container"
+      className={`
+        card shadow-sm border-2 mb-4 
+        ${styles.dropzoneContainer}
+        ${isDragActive ? `border-primary bg-primary bg-opacity-10 ${styles.dropzoneContainerActive}` : 'border-secondary-subtle'}
+      `}
     >
-      <input {...getInputProps()} />
-
-      <div className="card-body">
-        {/* Drag active overlay */}
+      <input {...getInputProps({ id: 'file-input-element' })} />{' '}
+      <div className="card-body" id="file-dropzone-card-body">
+        {' '}
         {isDragActive && (
           <div
-            className="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center"
-            style={{
-              zIndex: 10,
-              backgroundColor: 'rgba(13, 110, 253, 0.1)',
-              backdropFilter: 'blur(2px)',
-              borderRadius: 'inherit',
-            }}
+            id="drag-active-overlay"
+            className={`position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center rounded-4 ${styles.dragActiveOverlay}`}
           >
             <div className="text-center p-4 bg-primary text-white rounded-4 shadow-lg">
               <i className="bi bi-cloud-upload fs-1 mb-3"></i>
@@ -159,48 +150,47 @@ const FileUpload: React.FC<FileUploadProps> = ({
             </div>
           </div>
         )}
-
-        {/* Content based on file state */}
         {selectedFiles.length === 0 ? (
-          // Empty state
-          <div className="d-flex flex-column align-items-center justify-content-center text-center py-5">
+          <div
+            id="dropzone-empty-state"
+            className="d-flex flex-column align-items-center justify-content-center text-center py-5"
+          >
             <i className="bi bi-cloud-upload fs-1 mb-4 text-secondary"></i>
             <h4 className="mb-3 fw-bold">
               Arrastra imágenes aquí o haz clic para seleccionar
             </h4>
             <p className="mb-0 text-muted">
-              Formatos: PNG, JPG, JPEG, WebP (máx. 10MB cada una)
+              Formatos: PNG, JPG, JPEG, WebP (máx. {maxSize / 1024 / 1024}MB
+              cada una)
               <br />
               Límite: {maxFiles} imágenes
             </p>
           </div>
         ) : (
-          // Files selected state
           <>
-            {/* Thumbnails Grid */}
-            <div className="row g-3 mb-3">
-              {selectedFiles.map((file) => {
+            <div className="row g-3 mb-3" id="thumbnail-grid">
+              {' '}
+              {selectedFiles.map((file, index) => {
                 const fileKey = generateFileKey(file);
                 const preview = filePreviews[fileKey];
                 return (
-                  <div key={fileKey} className="col-12 col-sm-6 col-lg-4">
+                  <div
+                    key={fileKey}
+                    className="col-12 col-sm-6 col-lg-4"
+                    id={`thumbnail-item-${index}`}
+                  >
+                    {' '}
                     <div className="position-relative">
                       <div
-                        className="thumbnail-container border rounded-3 overflow-hidden bg-light d-flex align-items-center justify-content-center w-100"
-                        style={{
-                          aspectRatio: '4/3', // Or your desired aspect ratio
-                          minHeight: '150px', // Ensures a minimum size
-                        }}
+                        className="ratio ratio-4x3 thumbnail-container border rounded-3 overflow-hidden bg-light d-flex align-items-center justify-content-center w-100"
+                        id={`thumbnail-image-container-${index}`}
                       >
                         {preview ? (
                           <img
                             src={preview}
                             alt={file.name}
-                            className="w-100 h-100"
-                            style={{
-                              objectFit: 'cover',
-                              objectPosition: 'top center',
-                            }}
+                            className={`w-100 h-100 ${styles.thumbnailImage}`}
+                            id={`thumbnail-image-${index}`}
                           />
                         ) : (
                           <div className="text-center text-muted">
@@ -210,10 +200,9 @@ const FileUpload: React.FC<FileUploadProps> = ({
                         )}
                       </div>
 
-                      {/* File name overlay */}
                       <div
-                        className="position-absolute bottom-0 start-0 end-0 bg-dark bg-opacity-75 text-white p-2"
-                        style={{ fontSize: '0.8rem' }}
+                        id={`thumbnail-filename-overlay-${index}`}
+                        className={`position-absolute bottom-0 start-0 end-0 bg-dark bg-opacity-75 text-white p-2 ${styles.thumbnailFilenameOverlay}`}
                       >
                         <div
                           className="text-truncate fw-medium"
@@ -223,15 +212,14 @@ const FileUpload: React.FC<FileUploadProps> = ({
                         </div>
                       </div>
 
-                      {/* Remove button */}
                       <button
+                        id={`thumbnail-remove-button-${index}`}
                         type="button"
-                        className="btn btn-danger btn-sm position-absolute top-0 end-0 m-2 rounded-circle d-flex align-items-center justify-content-center"
+                        className={`btn btn-danger btn-sm position-absolute top-0 end-0 m-2 rounded-circle d-flex align-items-center justify-content-center ${styles.removeButton}`}
                         onClick={(e) => removeFile(file, e)}
                         aria-label={`Quitar ${file.name}`}
-                        style={{ width: '32px', height: '32px' }}
                       >
-                        <i className="bi bi-x" style={{ fontSize: '16px' }}></i>
+                        <i className={`bi bi-x ${styles.removeButtonIcon}`}></i>
                       </button>
                     </div>
                   </div>
@@ -239,14 +227,19 @@ const FileUpload: React.FC<FileUploadProps> = ({
               })}
             </div>
 
-            {/* Add more files prompt - only show if not at max */}
             {selectedFiles.length < maxFiles && (
-              <div className="text-center py-3 border-top">
+              <div
+                className="text-center py-3 border-top"
+                id="add-more-files-prompt"
+              >
                 <div className="d-flex align-items-center justify-content-center text-muted">
                   <i className="bi bi-plus-circle fs-5 me-2"></i>
                   <span>
-                    Haz clic en cualquier lugar o arrastra más imágenes para
-                    añadir ({maxFiles - selectedFiles.length} restantes)
+                    Haz clic o arrastra hasta {maxFiles - selectedFiles.length}{' '}
+                    {maxFiles - selectedFiles.length > 1
+                      ? 'imágenes'
+                      : 'imagen'}{' '}
+                    más
                   </span>
                 </div>
               </div>

@@ -376,57 +376,49 @@ function App() {
         onSignOutClick={googleSignOut}
       />
 
-      <main className="container py-4">
+      <main className="container-xl py-4">
         <div className="row justify-content-center">
-          <div className="col-12 col-md-10 col-lg-8 col-xl-6">
-            {/* File Upload Component */}
-            <FileUpload
-              selectedFiles={selectedFiles}
-              onFilesChange={setSelectedFiles}
-              setTemporaryError={setTemporaryError}
-              maxFiles={3}
-              maxSize={10 * 1024 * 1024}
-            />
-
-            {error && (
-              <div
-                className="alert alert-danger d-flex align-items-center mb-4"
-                role="alert"
-              >
-                <i className="bi bi-exclamation-triangle-fill me-2"></i>
-                <div>
-                  <strong>Error:</strong> {error}
-                </div>
+          <FileUpload
+            selectedFiles={selectedFiles}
+            onFilesChange={setSelectedFiles}
+            setTemporaryError={setTemporaryError} // Make sure prop name matches
+          />
+          {error && (
+            <div
+              className="alert alert-danger d-flex align-items-center mb-4"
+              role="alert"
+            >
+              <i className="bi bi-exclamation-triangle-fill me-2"></i>
+              <div>
+                <strong>Error:</strong> {error}
               </div>
-            )}
-
-            {successLink && !error && (
-              <div
-                className="alert alert-success d-flex align-items-center justify-content-between mb-4"
-                role="alert"
-              >
-                <div className="d-flex align-items-center">
-                  <i className="bi bi-check-circle-fill me-2"></i>
-                  <div>
-                    <strong>Processing Complete!</strong> Your data has been
-                    processed successfully.
-                  </div>
-                </div>
-                <a
-                  href={successLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="btn btn-success btn-sm ms-3"
-                >
-                  <i className="bi bi-box-arrow-up-right me-1"></i>
-                  Open Spreadsheet
-                </a>
-              </div>
-            )}
-
-            <div className="d-flex justify-content-center mb-4">
-              {generateButton()}
             </div>
+          )}
+          {successLink && !error && (
+            <div
+              className="alert alert-success d-flex align-items-center justify-content-between mb-4"
+              role="alert"
+            >
+              <div className="d-flex align-items-center">
+                <i className="bi bi-check-circle-fill me-2"></i>
+                <div>
+                  <strong>Processing Complete!</strong> Your data has been
+                  processed successfully.
+                </div>
+              </div>
+              <a
+                href={successLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn btn-success btn-sm ms-3"
+              >
+                <i className="bi bi-box-arrow-up-right me-1"></i>
+                Open Spreadsheet
+              </a>
+            </div>
+          )}
+          <div className="d-flex justify-content-center mb-4">
+            {generateButton()}
           </div>
         </div>
       </main>
