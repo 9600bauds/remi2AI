@@ -23,7 +23,7 @@ const Header: React.FC<HeaderProps> = ({
   const { t } = useTranslation();
 
   return (
-    <nav className="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+    <nav className="navbar navbar-expand-lg navbar-dark bg-dark">
       <div className="container-xl">
         {/* 
           We need another div here to act as the flex container for brand and nav items 

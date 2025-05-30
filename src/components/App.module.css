@@ -1,0 +1,77 @@
+.appContainer {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden; /* Prevent the whole app from scrolling if a child misbehaves */
+  background-color: #f8f9fa;
+}
+
+.headerWrapper {
+  flex-shrink: 0.25; /* Todo: Won't shrink, probably because of header being naughty */
+}
+
+.mainContentArea {
+  flex-grow: 1; /* Takes up space between header and bottom of viewport */
+  flex-shrink: 1;
+  min-height: 0; /* Allows mainContentArea to shrink if its parent (.appContainer) constrains it */
+  display: flex;
+  flex-direction: column;
+  padding: clamp(0.5rem, 2.5vh, 1.5rem) /* Vertical: top and bottom */
+    clamp(0.5rem, 2.5vw, 1.5rem); /* Horizontal: left and right */
+  width: 100%;
+  margin: 0 auto;
+}
+
+.actionPanelWrapper {
+  flex-shrink: 0; /* This panel will not shrink */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.actionPanelWrapper > :global(.alert) {
+  width: 100%;
+  margin-bottom: 1rem;
+}
+
+.alert {
+  display: flex;
+  align-items: center;
+}
+
+.alertSuccess {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.alertContent {
+  display: flex;
+  align-items: center;
+}
+
+.actionButtonWrapper {
+  padding-top: 0.5rem;
+}
+
+@keyframes breathing-glow {
+  0% {
+    border-color: rgba(var(--bs-primary-rgb), 0.5);
+    box-shadow: 0 0 15px rgba(var(--bs-primary-rgb), 0.3);
+    transform: scale(1);
+  }
+  50% {
+    border-color: rgba(var(--bs-primary-rgb), 1);
+    box-shadow: 0 0 40px 5px rgba(var(--bs-primary-rgb), 0.7);
+    transform: scale(1.04);
+  }
+  100% {
+    border-color: rgba(var(--bs-primary-rgb), 0.5);
+    box-shadow: 0 0 15px rgba(var(--bs-primary-rgb), 0.3);
+    transform: scale(1);
+  }
+}
+
+.glowingButton {
+  animation: breathing-glow 2s ease-in-out infinite;
+}

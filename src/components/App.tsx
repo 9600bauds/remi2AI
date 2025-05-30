@@ -1,13 +1,13 @@
 // src/components/App.tsx
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
+import styles from './App.module.css';
 import { useGoogleLogin, googleLogout } from '@react-oauth/google';
-import { useTranslation } from 'react-i18next'; // Import useTranslation
+import { useTranslation } from 'react-i18next';
 import { sendAiRequest } from '../services/aiApiService';
-import './App.css';
 import { LOCALSTORAGE_TOKEN_KEY } from '../utils/constants';
 import type { SupportedLanguage } from '../types/SupportedLanguage';
 import Header from './Header';
-import FileUpload from './FileUpload';
+import FileUpload, { type FileUploadHandles } from './FileUpload';
 import type { LocalizedError } from '../types/LocalizedError';
 
 const SHEETS_TEMPLATE_ID = '1RkI3YNGaywbHT5qANy4TH-JvwioSQ74SQzHT6gR6l1c';
@@ -36,6 +36,8 @@ function App() {
   const [successLink, setSuccessLink] = useState<string | null>(null);
   const [error, setError] = useState<LocalizedError>(null);
   const [errorTimeout, setErrorTimeout] = useState<NodeJS.Timeout | null>(null);
+
+  const fileUploadRef = useRef<FileUploadHandles>(null); // Ref for FileUpload
 
   /**
    * Google API load/init
@@ -70,19 +72,19 @@ function App() {
         },
         onerror: () => {
           console.error('Failed to load GAPI client library');
-          setTemporaryError('messages.errorGapiLoad'); // Use key
+          setTemporaryError('messages.errorGapiLoad');
         },
         timeout: 5000,
         ontimeout: () => {
           console.error(
             'GAPI client library could not load in a timely manner'
           );
-          setTemporaryError('messages.errorGapiTimeout'); // Use key
+          setTemporaryError('messages.errorGapiTimeout');
         },
       });
     };
     loadGapiClient();
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   /**
    * useEffect to automatically re-login from localstorage
@@ -109,7 +111,7 @@ function App() {
         localStorage.removeItem(LOCALSTORAGE_TOKEN_KEY);
       }
     }
-  }, [isGapiClientReady]);
+  }, [isGapiClientReady]); // eslint-disable-line react-hooks/exhaustive-deps
 
   /**
    * Google authentication login/log out
@@ -117,7 +119,7 @@ function App() {
   const onSignIn = (token: string) => {
     gapi.client.setToken({ access_token: token });
     setIsGoogleSignedIn(true);
-    setError(null); // Clear any previous errors
+    setError(null);
     if (selectedFiles.length > 0) {
       setHighlightButton(true);
     }
@@ -143,12 +145,15 @@ function App() {
     },
     onError: (errorResponse: unknown) => {
       console.error('Google Login Failed:', errorResponse);
-      let message = 'Login failed for unknown reasons.'; // Fallback
-      let messageKey = 'messages.errorGoogleLoginUnknown';
+      let message = t('messages.errorGoogleLoginUnknown'); // Default translated message
+      let messageKey: LocalizedError = 'messages.errorGoogleLoginUnknown';
 
       if (typeof errorResponse === 'string') {
         message = errorResponse;
-        messageKey = 'messages.errorGoogleLoginWithMessage';
+        messageKey = {
+          key: 'messages.errorGoogleLoginWithMessage',
+          params: { message },
+        };
       } else if (
         errorResponse &&
         typeof errorResponse === 'object' &&
@@ -159,10 +164,13 @@ function App() {
           error_description?: string;
         };
         message = err.error_description || err.error;
-        messageKey = 'messages.errorGoogleLoginWithMessage';
+        messageKey = {
+          key: 'messages.errorGoogleLoginWithMessage',
+          params: { message },
+        };
       }
       onSignOut();
-      setTemporaryError({ key: messageKey, params: { message } });
+      setTemporaryError(messageKey);
     },
     scope: GAPI_SCOPE,
   });
@@ -206,11 +214,10 @@ function App() {
     copyFilename?: string
   ): Promise<gapi.client.drive.File> => {
     if (!gapi?.client?.drive) {
-      // Added null checks for gapi.client
-      throw new Error(t('messages.errorGapiClientNotReady')); // Use translated error
+      throw new Error(t('messages.errorGapiClientNotReady'));
     }
     if (!gapi.client.getToken()) {
-      throw new Error(t('messages.errorAccessTokenMissing')); // Use translated error
+      throw new Error(t('messages.errorAccessTokenMissing'));
     }
     const finalCopyFilename =
       copyFilename ||
@@ -240,7 +247,7 @@ function App() {
       throw new Error(t('messages.errorAccessTokenMissing'));
     }
     if (!dataToWrite || dataToWrite.length === 0) {
-      throw new Error(t('messages.errorNoDataToWrite')); // Use translated error
+      throw new Error(t('messages.errorNoDataToWrite'));
     }
 
     const response = await gapi.client.sheets.spreadsheets.values.update({
@@ -266,7 +273,7 @@ function App() {
 
     setIsAwaitingResponse(true);
     setError(null);
-    setSuccessLink(null); // Clear previous success link
+    setSuccessLink(null);
     setHighlightButton(false);
 
     try {
@@ -279,7 +286,7 @@ function App() {
         AI_SCHEMA_TEXT
       );
 
-      const copiedFile = await copyFile(SHEETS_TEMPLATE_ID); // Default name will be applied by copyFile
+      const copiedFile = await copyFile(SHEETS_TEMPLATE_ID);
       if (!copiedFile || !copiedFile.id) {
         setTemporaryError('messages.errorCopyFile');
         setIsAwaitingResponse(false);
@@ -288,22 +295,20 @@ function App() {
       await writeToSpreadsheet(copiedFile.id, aiData, SHEETS_RANGE);
       if (copiedFile.webViewLink) {
         setSuccessLink(copiedFile.webViewLink);
-        window.open(copiedFile.webViewLink); // Optionally open, or just show link
+        window.open(copiedFile.webViewLink);
       }
-      setSelectedFiles([]); // Clear files on success
+      setSelectedFiles([]);
     } catch (err) {
       console.error('Error during processing:', err);
       const errorMsg =
         err instanceof Error ? err.message : t('messages.errorUnknown');
-      // If err.message is one of the translated strings from copyFile/writeToSpreadsheet, t() will handle it.
-      // Otherwise, it might be a raw string. Consider mapping known raw errors to keys.
       if (
         err instanceof Error &&
         (err.message === t('messages.errorGapiClientNotReady') ||
           err.message === t('messages.errorAccessTokenMissing') ||
           err.message === t('messages.errorNoDataToWrite'))
       ) {
-        setTemporaryError(err.message); // It's already a translation key
+        setTemporaryError(err.message);
       } else {
         setTemporaryError({
           key: 'messages.errorProcessingGeneric',
@@ -352,100 +357,101 @@ function App() {
         </button>
       );
     }
+
     if (selectedFiles.length === 0) {
       return (
         <button
           type="button"
-          className="btn btn-secondary btn-lg"
-          onClick={handleSubmit}
-          disabled
+          className="btn btn-outline-primary btn-lg"
+          onClick={() => {
+            if (fileUploadRef.current) {
+              fileUploadRef.current.openFileDialog();
+            }
+          }}
         >
+          <i className="bi bi-plus-circle me-2"></i>
           {t('buttons.selectFilesToContinue')}
         </button>
       );
     }
+
     const buttonTextKey =
       selectedFiles.length === 1 ? 'buttons.process_one' : 'buttons.process';
+    const buttonClasses = ['btn', 'btn-primary', 'btn-lg'];
+    if (highlightButton) {
+      buttonClasses.push(styles.glowingButton);
+    }
     return (
       <button
         type="button"
-        className={`btn btn-primary btn-lg ${highlightButton ? 'btn-breathing-highlight' : ''}`}
+        className={buttonClasses.join(' ')}
         onClick={handleSubmit}
       >
+        <i className="bi bi-robot me-2"></i>
         {t(buttonTextKey, { count: selectedFiles.length })}
       </button>
     );
   };
 
-  /**
-   * Returned element
-   */
   return (
-    <div className="d-flex flex-column min-vh-100 bg-light">
-      <Header
-        currentLanguage={i18n.language.split('-')[0] as SupportedLanguage} // Get base language
-        onLanguageChange={changeLanguage}
-        onToggleSettings={toggleSettingsModal}
-        isGoogleSignedIn={isGoogleSignedIn}
-        onSignInClick={googleSignIn}
-        onSignOutClick={googleSignOut}
-      />
+    <div className={styles.appContainer}>
+      <div className={styles.headerWrapper}>
+        <Header
+          currentLanguage={i18n.language.split('-')[0] as SupportedLanguage}
+          onLanguageChange={changeLanguage}
+          onToggleSettings={toggleSettingsModal}
+          isGoogleSignedIn={isGoogleSignedIn}
+          onSignInClick={() => googleSignIn()}
+          onSignOutClick={googleSignOut}
+        />
+      </div>
 
-      <main className="container-fluid p-4">
-        {' '}
-        <div className="row justify-content-center">
-          <div className="col-12">
-            {' '}
-            <FileUpload
-              selectedFiles={selectedFiles}
-              onFilesChange={setSelectedFiles}
-              setTemporaryError={setTemporaryError}
-            />
-            {error && (
-              <div
-                className="alert alert-danger d-flex align-items-center mb-4"
-                role="alert"
-              >
-                <i className="bi bi-exclamation-triangle-fill me-2"></i>
-                <div>
-                  <strong>{t('messages.error')}:</strong>{' '}
-                  {
-                    typeof error === 'string'
-                      ? t(error)
-                      : error?.key
-                        ? t(error.key, error.params)
-                        : t('messages.errorUnknown') // Fallback for malformed error object
-                  }
-                </div>
+      <main className={styles.mainContentArea}>
+        <FileUpload
+          ref={fileUploadRef}
+          selectedFiles={selectedFiles}
+          onFilesChange={setSelectedFiles}
+          setTemporaryError={setTemporaryError}
+        />
+
+        <div className={styles.actionPanelWrapper}>
+          {error && (
+            <div className={`alert alert-danger ${styles.alert}`} role="alert">
+              <i className="bi bi-exclamation-triangle-fill me-2"></i>
+              <div>
+                <strong>{t('messages.error')}:</strong>{' '}
+                {typeof error === 'string'
+                  ? t(error)
+                  : error?.key
+                    ? t(error.key, error.params)
+                    : t('messages.errorUnknown')}
               </div>
-            )}
-            {successLink && !error && (
-              <div
-                className="alert alert-success d-flex align-items-center justify-content-between mb-4"
-                role="alert"
-              >
-                <div className="d-flex align-items-center">
-                  <i className="bi bi-check-circle-fill me-2"></i>
-                  <div>
-                    <strong>{t('messages.processingComplete')}</strong>{' '}
-                    {t('messages.dataProcessed')}
-                  </div>
-                </div>
-                <a
-                  href={successLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="btn btn-success btn-sm ms-3"
-                >
-                  <i className="bi bi-box-arrow-up-right me-1"></i>
-                  {t('messages.openSpreadsheet')}
-                </a>
-              </div>
-            )}
-            <div className="d-flex justify-content-center mb-4">
-              {generateButton()}
             </div>
-          </div>
+          )}
+          {successLink && !error && (
+            <div
+              className={`alert alert-success ${styles.alertSuccess}`}
+              role="alert"
+            >
+              <div className={styles.alertContent}>
+                <i className="bi bi-check-circle-fill me-2"></i>
+                <div>
+                  <strong>{t('messages.processingComplete')}</strong>{' '}
+                  {t('messages.dataProcessed')}
+                </div>
+              </div>
+              <a
+                href={successLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn btn-success btn-sm ms-3"
+              >
+                <i className="bi bi-box-arrow-up-right me-1"></i>
+                {t('messages.openSpreadsheet')}
+              </a>
+            </div>
+          )}
+          <div className={styles.actionButtonWrapper}>{generateButton()}</div>
         </div>
       </main>
       {/* TODO: Settings Modal
