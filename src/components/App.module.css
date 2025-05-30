@@ -2,12 +2,11 @@
   display: flex;
   flex-direction: column;
   height: 100vh;
-  overflow: hidden; /* Prevent the whole app from scrolling if a child misbehaves */
+  width: 100vw;
   background-color: #f8f9fa;
 }
 
 .headerWrapper {
-  flex-shrink: 0.25; /* Todo: Won't shrink, probably because of header being naughty */
 }
 
 .mainContentArea {
@@ -16,6 +15,7 @@
   min-height: 0; /* Allows mainContentArea to shrink if its parent (.appContainer) constrains it */
   display: flex;
   flex-direction: column;
+  justify-content: center;
   padding: clamp(0.5rem, 2.5vh, 1.5rem) /* Vertical: top and bottom */
     clamp(0.5rem, 2.5vw, 1.5rem); /* Horizontal: left and right */
   width: 100%;

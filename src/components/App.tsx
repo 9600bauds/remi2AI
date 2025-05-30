@@ -7,7 +7,7 @@ import { sendAiRequest } from '../services/aiApiService';
 import { LOCALSTORAGE_TOKEN_KEY } from '../utils/constants';
 import type { SupportedLanguage } from '../types/SupportedLanguage';
 import Header from './Header';
-import FileUpload, { type FileUploadHandles } from './FileUpload';
+import DropZone, { type DropZoneHandles } from './DropZone';
 import type { LocalizedError } from '../types/LocalizedError';
 
 const SHEETS_TEMPLATE_ID = '1RkI3YNGaywbHT5qANy4TH-JvwioSQ74SQzHT6gR6l1c';
@@ -37,7 +37,7 @@ function App() {
   const [error, setError] = useState<LocalizedError>(null);
   const [errorTimeout, setErrorTimeout] = useState<NodeJS.Timeout | null>(null);
 
-  const fileUploadRef = useRef<FileUploadHandles>(null); // Ref for FileUpload
+  const dropZoneRef = useRef<DropZoneHandles>(null); // Ref for DropZone
 
   /**
    * Google API load/init
@@ -364,8 +364,8 @@ function App() {
           type="button"
           className="btn btn-outline-primary btn-lg"
           onClick={() => {
-            if (fileUploadRef.current) {
-              fileUploadRef.current.openFileDialog();
+            if (dropZoneRef.current) {
+              dropZoneRef.current.openFileDialog();
             }
           }}
         >
@@ -407,8 +407,8 @@ function App() {
       </div>
 
       <main className={styles.mainContentArea}>
-        <FileUpload
-          ref={fileUploadRef}
+        <DropZone
+          ref={dropZoneRef}
           selectedFiles={selectedFiles}
           onFilesChange={setSelectedFiles}
           setTemporaryError={setTemporaryError}

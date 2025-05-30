@@ -1,13 +1,13 @@
-// src/components/FileUpload.tsx
+// src/components/DropZone.tsx
 import { useCallback, useState, forwardRef, useImperativeHandle } from 'react';
 import { useDropzone, type FileRejection } from 'react-dropzone';
 import { useTranslation } from 'react-i18next';
 import { MAX_FILES, MAX_FILESIZE } from '../utils/constants';
-import styles from './FileUpload.module.css';
+import styles from './DropZone.module.css';
 import ThumbnailItem from './ThumbnailItem';
 import type { LocalizedError } from '../types/LocalizedError';
 
-interface FileUploadProps {
+interface DropZoneProps {
   selectedFiles: File[];
   onFilesChange: (files: File[]) => void;
   setTemporaryError: (errorValue: LocalizedError, duration?: number) => void;
@@ -15,11 +15,11 @@ interface FileUploadProps {
   maxSize?: number;
 }
 
-export interface FileUploadHandles {
+export interface DropZoneHandles {
   openFileDialog: () => void;
 }
 
-const FileUpload = forwardRef<FileUploadHandles, FileUploadProps>(
+const DropZone = forwardRef<DropZoneHandles, DropZoneProps>(
   (
     {
       selectedFiles,
@@ -173,10 +173,10 @@ const FileUpload = forwardRef<FileUploadHandles, FileUploadProps>(
     return (
       <div
         {...getRootProps()}
-        id="fileUploadWrapper"
+        id="dropzone-container"
         className={`
-        card shadow-sm border-2 
         ${styles.dropzoneContainer}
+        ${selectedFiles.length !== 0 ? 'flex-grow-1' : '' /* Kind of a dirty hack here because I wasn't able to replicate this behavior with pure CSS */} 
         ${isDragActive ? `border-primary bg-primary bg-opacity-10` : 'border-secondary-subtle'}
       `}
       >
@@ -193,7 +193,10 @@ const FileUpload = forwardRef<FileUploadHandles, FileUploadProps>(
           </div>
         )}
         {selectedFiles.length === 0 ? (
-          <div id="dropzone-empty-state" className={styles.emptyState}>
+          <div
+            id="dropzoneContents"
+            className={`${styles.dropzoneContents} ${styles.dropzoneContentsEmpty}`}
+          >
             <i className="bi bi-cloud-upload fs-1 mb-4 text-secondary"></i>
             <h4 className="mb-3 fw-bold">{t('fileUpload.dragOrClick')}</h4>
             <p className="mb-0 text-muted">
@@ -205,7 +208,10 @@ const FileUpload = forwardRef<FileUploadHandles, FileUploadProps>(
             </p>
           </div>
         ) : (
-          <div id="dropzone-full-state" className={styles.fullState}>
+          <div
+            id="dropzoneContents"
+            className={`${styles.dropzoneContents} ${styles.dropzoneContentsHasItems}`}
+          >
             <div id={styles.thumbnailGrid} className={styles.thumbnailGrid}>
               {selectedFiles.map((file, index) => {
                 const fileKey = generateFileKey(file);
@@ -223,8 +229,8 @@ const FileUpload = forwardRef<FileUploadHandles, FileUploadProps>(
 
             {selectedFiles.length < maxFiles && (
               <div
-                className={styles.addMoreFilesPrompt}
-                id="add-more-files-prompt"
+                className={styles.addMoreFilesContainer}
+                id="addMoreFilesMessage"
               >
                 <div className={styles.addMoreFilesContent}>
                   <i className="bi bi-plus-circle me-2"></i>
@@ -241,5 +247,5 @@ const FileUpload = forwardRef<FileUploadHandles, FileUploadProps>(
   }
 );
 
-FileUpload.displayName = 'FileUpload';
-export default FileUpload;
+DropZone.displayName = 'DropZone';
+export default DropZone;
