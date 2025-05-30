@@ -53,7 +53,7 @@ function App() {
       } catch (e: unknown) {
         console.error('Error initializing GAPI client:', e);
         const errMsg = e instanceof Error ? e.message : 'Unknown error';
-        setTemporaryError({
+        setError({
           key: 'messages.errorGapiInit',
           params: { message: errMsg },
         });
@@ -191,7 +191,7 @@ function App() {
 
   const setTemporaryError = (
     errorValue: LocalizedError,
-    duration: number = 4000
+    duration: number = 6000
   ) => {
     if (errorTimeout) {
       clearTimeout(errorTimeout);
@@ -288,7 +288,7 @@ function App() {
 
       const copiedFile = await copyFile(SHEETS_TEMPLATE_ID);
       if (!copiedFile || !copiedFile.id) {
-        setTemporaryError('messages.errorCopyFile');
+        setError('messages.errorCopyFile');
         setIsAwaitingResponse(false);
         return;
       }
@@ -308,9 +308,9 @@ function App() {
           err.message === t('messages.errorAccessTokenMissing') ||
           err.message === t('messages.errorNoDataToWrite'))
       ) {
-        setTemporaryError(err.message);
+        setError(err.message);
       } else {
-        setTemporaryError({
+        setError({
           key: 'messages.errorProcessingGeneric',
           params: { message: errorMsg },
         });
