@@ -1,3 +1,5 @@
+import { Type, type Schema } from '@google/genai';
+
 export const LOCALSTORAGE_TOKEN_KEY = 'googleUserToken';
 
 export const MAX_FILES = 3;
@@ -8,11 +10,43 @@ export const DISCOVERY_DOCS = [
   'https://sheets.googleapis.com/$discovery/rest?version=v4',
   'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest',
 ];
-export const GAPI_SCOPE =
-  'https://www.googleapis.com/auth/drive.appdata https://www.googleapis.com/auth/drive.file';
+export const GAPI_SCOPE = 'https://www.googleapis.com/auth/drive.file';
 export const API_KEY = import.meta.env.VITE_GOOGLE_API_KEY;
-export const AI_MODEL = import.meta.env.VITE_MODEL_NAME;
-export const AI_SCHEMA_TEXT = import.meta.env.VITE_STRUCTURED_OUTPUT_SCHEMA;
+
+export const AI_MODEL: string = 'gemini-2.5-flash-preview-05-20';
+export const AI_PROMPT: string = `You are an expert at data entry, digitizing a scanned invoice provided by the user.
+Your task is to identify and list all the items presented in the scanned invoice.
+Analyze the provided images, gather the text that appears on the invoice, and then identify each item.
+The layout of the invoice usually follows a table-like structure, though it may not always be intuitive.
+Some of the text may be hard to read (obscured by stamps or writing), pay careful attention.
+Sometimes, the printer used to print this invoice may have been misaligned, resulting in the text being hard to read or askew.
+After identifying all the items, DOUBLE-CHECK to make sure you have not missed any.
+DOUBLE-CHECK also that you have not hallucinated any of the identified items - verify that the all truly exist in the images.
+When ready, provide a response according to the structured output.`;
+export const AI_SCHEMA: Schema = {
+  type: Type.ARRAY,
+  items: {
+    type: Type.OBJECT,
+    properties: {
+      itemName: {
+        type: Type.STRING,
+        description: 'Name of the item, exactly as it appears on the invoice.',
+      },
+      amount: {
+        type: Type.NUMBER,
+        description:
+          'The amount for this item, exactly as it appears on the invoice.',
+      },
+      SKU: {
+        type: Type.STRING,
+        description:
+          "Optional: The provider's internal code for this item, if it appears.",
+      },
+    },
+    required: ['itemName', 'amount'],
+    propertyOrdering: ['itemName', 'amount', 'SKU'],
+  },
+};
 
 export const BATCH_UPDATE_REQUEST: gapi.client.sheets.Request[] = [
   // 1. Set Column Widths

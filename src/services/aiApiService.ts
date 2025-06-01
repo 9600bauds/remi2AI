@@ -38,8 +38,8 @@ export const sendAiRequest = async (
   model: string,
   files: File[],
   prompt: string,
-  schemaText: string
-): Promise<string[][]> => {
+  responseSchema: Schema
+): Promise<string> => {
   if (files.length === 0) throw new Error('No files uploaded.');
   if (!prompt) throw new Error('AI service received an empty prompt!');
 
@@ -52,23 +52,13 @@ export const sendAiRequest = async (
 
     const requestPartsForContent: Part[] = [textPart, ...imageParts];
 
-    let schemaObject: Schema;
-    try {
-      schemaObject = JSON.parse(schemaText) as Schema;
-    } catch (e) {
-      console.error('Failed to parse VITE_STRUCTURED_OUTPUT_SCHEMA:', e);
-      throw new Error(
-        'Invalid JSON schema provided in VITE_STRUCTURED_OUTPUT_SCHEMA.'
-      );
-    }
-
     const response: GenerateContentResponse =
       await genAI.models.generateContent({
         model,
         contents: requestPartsForContent,
         config: {
           responseMimeType: 'application/json',
-          responseSchema: schemaObject,
+          responseSchema,
         },
       });
 
@@ -77,7 +67,7 @@ export const sendAiRequest = async (
         'Received a successful, but empty response from the AI API!'
       );
     }
-    return jsonResponseTo2DArray(response.text, schemaObject);
+    return response.text;
   } catch (error) {
     console.error('Error calling AI API with @google/genai SDK:', error);
     if (error instanceof Error) {
@@ -87,7 +77,10 @@ export const sendAiRequest = async (
   }
 };
 
-function jsonResponseTo2DArray(jsonText: string, schema: Schema): string[][] {
+export const jsonResponseTo2DArray = (
+  jsonText: string,
+  schema: Schema
+): string[][] => {
   const data: unknown = JSON.parse(jsonText);
 
   // Ensure we have an array of objects
@@ -118,4 +111,4 @@ function jsonResponseTo2DArray(jsonText: string, schema: Schema): string[][] {
   });
 
   return result;
-}
+};

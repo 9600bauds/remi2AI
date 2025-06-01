@@ -6,7 +6,6 @@ import type { SupportedLanguage } from '../types/SupportedLanguage';
 interface HeaderProps {
   currentLanguage: SupportedLanguage;
   onLanguageChange: (lang: SupportedLanguage) => void;
-  onToggleSettings: () => void;
   isGoogleSignedIn: boolean;
   onSignInClick: () => void;
   onSignOutClick: () => void;
@@ -15,7 +14,6 @@ interface HeaderProps {
 const Header: React.FC<HeaderProps> = ({
   currentLanguage,
   onLanguageChange,
-  onToggleSettings,
   isGoogleSignedIn,
   onSignInClick,
   onSignOutClick,
@@ -62,17 +60,6 @@ const Header: React.FC<HeaderProps> = ({
                 </button>
               </div>
             </div>
-            <div className="nav-item me-3">
-              <button
-                type="button"
-                className="btn btn-outline-light btn-sm"
-                onClick={onToggleSettings}
-                aria-label={t('header.settingsAriaLabel')}
-              >
-                <i className="bi bi-gear-fill"></i>
-              </button>
-            </div>
-
             <div className="nav-item">
               {isGoogleSignedIn ? (
                 <button

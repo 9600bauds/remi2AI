@@ -3,10 +3,11 @@ import { useEffect, useState, useRef } from 'react';
 import styles from './App.module.css';
 import { useGoogleLogin, googleLogout } from '@react-oauth/google';
 import { useTranslation } from 'react-i18next';
-import { sendAiRequest } from '../services/aiApiService';
+import { jsonResponseTo2DArray, sendAiRequest } from '../services/aiApiService';
 import {
   AI_MODEL,
-  AI_SCHEMA_TEXT,
+  AI_PROMPT,
+  AI_SCHEMA,
   API_KEY,
   BATCH_UPDATE_REQUEST,
   DISCOVERY_DOCS,
@@ -28,13 +29,12 @@ function App() {
 
   const [isGapiClientReady, setIsGapiClientReady] = useState<boolean>(false);
   const [isGoogleSignedIn, setIsGoogleSignedIn] = useState<boolean>(false);
-  const [isSettingsModalOpen, setIsSettingsModalOpen] =
-    useState<boolean>(false);
 
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [isAwaitingResponse, setIsAwaitingResponse] = useState<boolean>(false);
   const [highlightButton, setHighlightButton] = useState<boolean>(false);
-  const [successLink, setSuccessLink] = useState<string | null>(null);
+  const [resultLink, setresultLink] = useState<string | null>(null);
+  const [resultJson, setresultJson] = useState<string | null>(null);
   const [error, setError] = useState<LocalizedError>(null);
   const [errorTimeout, setErrorTimeout] = useState<NodeJS.Timeout | null>(null);
 
@@ -186,10 +186,6 @@ function App() {
     await i18n.changeLanguage(lng);
   };
 
-  const toggleSettingsModal = () => {
-    setIsSettingsModalOpen((prev) => !prev);
-  };
-
   const setTemporaryError = (
     errorValue: LocalizedError,
     duration: number = 6000
@@ -207,6 +203,11 @@ function App() {
     }
   };
 
+  const copyJsonToClipboard = () => {
+    //todo: copy json result to clipboard here
+    alert('Todo');
+  };
+
   const handleSubmit = async () => {
     if (selectedFiles.length === 0) {
       setTemporaryError('fileUpload.errorNoFilesSelected');
@@ -219,21 +220,21 @@ function App() {
 
     setIsAwaitingResponse(true);
     setError(null);
-    setSuccessLink(null);
+    setresultLink(null);
     setHighlightButton(false);
 
     try {
       const newFilename = t('fileUpload.defaultCopyName', {
         dateTime: new Date().toLocaleString(),
       });
-      const prompt = import.meta.env.VITE_PROMPT;
-      const aiData = await sendAiRequest(
+      const jsonResult = await sendAiRequest(
         API_KEY,
         AI_MODEL,
         selectedFiles,
-        prompt,
-        AI_SCHEMA_TEXT
+        AI_PROMPT,
+        AI_SCHEMA
       );
+      const arrayResult = jsonResponseTo2DArray(jsonResult, AI_SCHEMA);
 
       const newSheet = await createNewSheetFromTemplate(
         newFilename,
@@ -245,9 +246,14 @@ function App() {
         return;
       }
 
-      await writeToSpreadsheet(newSheet.spreadsheetId, aiData, SHEETS_RANGE);
+      await writeToSpreadsheet(
+        newSheet.spreadsheetId,
+        arrayResult,
+        SHEETS_RANGE
+      );
       if (newSheet.spreadsheetUrl) {
-        setSuccessLink(newSheet.spreadsheetUrl);
+        setresultLink(newSheet.spreadsheetUrl);
+        setresultJson(jsonResult);
         window.open(newSheet.spreadsheetUrl);
         setSelectedFiles([]);
       }
@@ -352,7 +358,6 @@ function App() {
         <Header
           currentLanguage={i18n.language.split('-')[0] as SupportedLanguage}
           onLanguageChange={changeLanguage}
-          onToggleSettings={toggleSettingsModal}
           isGoogleSignedIn={isGoogleSignedIn}
           onSignInClick={() => googleSignIn()}
           onSignOutClick={googleSignOut}
@@ -381,7 +386,7 @@ function App() {
               </div>
             </div>
           )}
-          {successLink && !error && (
+          {resultLink && resultJson && !error && (
             <div
               className={`alert alert-success ${styles.alertSuccess}`}
               role="alert"
@@ -393,8 +398,16 @@ function App() {
                   {t('messages.dataProcessed')}
                 </div>
               </div>
+              <button
+                type="button"
+                className="btn btn-success btn-sm ms-3"
+                onClick={copyJsonToClipboard}
+              >
+                <i className="bi bi-box-arrow-up-right me-1"></i>
+                {t('messages.copyJson')}
+              </button>
               <a
-                href={successLink}
+                href={resultLink}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="btn btn-success btn-sm ms-3"
@@ -407,15 +420,6 @@ function App() {
           <div className={styles.actionButtonWrapper}>{generateButton()}</div>
         </div>
       </main>
-      {/* TODO: Settings Modal
-        {isSettingsModalOpen && (
-          <SettingsModal
-            isOpen={isSettingsModalOpen}
-            onClose={toggleSettingsModal}
-            // pass other settings props
-          />
-        )}
-      */}
     </div>
   );
 }
