@@ -4,23 +4,24 @@ import styles from './App.module.css';
 import { useGoogleLogin, googleLogout } from '@react-oauth/google';
 import { useTranslation } from 'react-i18next';
 import { sendAiRequest } from '../services/aiApiService';
-import { LOCALSTORAGE_TOKEN_KEY } from '../utils/constants';
+import {
+  AI_MODEL,
+  AI_SCHEMA_TEXT,
+  API_KEY,
+  BATCH_UPDATE_REQUEST,
+  DISCOVERY_DOCS,
+  GAPI_SCOPE,
+  LOCALSTORAGE_TOKEN_KEY,
+  SHEETS_RANGE,
+} from '../utils/constants';
 import type { SupportedLanguage } from '../types/SupportedLanguage';
 import Header from './Header';
 import DropZone, { type DropZoneHandles } from './DropZone';
 import type { LocalizedError } from '../types/LocalizedError';
-
-const SHEETS_TEMPLATE_ID = '1RkI3YNGaywbHT5qANy4TH-JvwioSQ74SQzHT6gR6l1c';
-const SHEETS_RANGE: string = 'Sheet1!B2';
-const DISCOVERY_DOCS = [
-  'https://sheets.googleapis.com/$discovery/rest?version=v4',
-  'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest',
-];
-const GAPI_SCOPE =
-  'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive';
-const API_KEY = import.meta.env.VITE_GOOGLE_API_KEY;
-const AI_MODEL = import.meta.env.VITE_MODEL_NAME;
-const AI_SCHEMA_TEXT = import.meta.env.VITE_STRUCTURED_OUTPUT_SCHEMA;
+import {
+  createNewSheetFromTemplate,
+  writeToSpreadsheet,
+} from '../services/googleSheetsService';
 
 function App() {
   const { t, i18n } = useTranslation();
@@ -206,61 +207,6 @@ function App() {
     }
   };
 
-  /**
-   * Program functions
-   */
-  const copyFile = async (
-    fileId: string,
-    copyFilename?: string
-  ): Promise<gapi.client.drive.File> => {
-    if (!gapi?.client?.drive) {
-      throw new Error(t('messages.errorGapiClientNotReady'));
-    }
-    if (!gapi.client.getToken()) {
-      throw new Error(t('messages.errorAccessTokenMissing'));
-    }
-    const finalCopyFilename =
-      copyFilename ||
-      t('fileUpload.defaultCopyName', {
-        dateTime: new Date().toLocaleString(),
-      });
-
-    const copyRequest = await gapi.client.drive.files.copy({
-      fileId,
-      resource: {
-        name: finalCopyFilename,
-      },
-      fields: 'id, webViewLink', // Fields to include in the response (we need the ID of the new copy)
-    });
-    return copyRequest.result;
-  };
-
-  const writeToSpreadsheet = async (
-    spreadsheetID: string,
-    dataToWrite: string[][],
-    range: string
-  ): Promise<gapi.client.Response<gapi.client.sheets.UpdateValuesResponse>> => {
-    if (!gapi?.client?.sheets) {
-      throw new Error(t('messages.errorGapiClientNotReady'));
-    }
-    if (!gapi.client.getToken()) {
-      throw new Error(t('messages.errorAccessTokenMissing'));
-    }
-    if (!dataToWrite || dataToWrite.length === 0) {
-      throw new Error(t('messages.errorNoDataToWrite'));
-    }
-
-    const response = await gapi.client.sheets.spreadsheets.values.update({
-      spreadsheetId: spreadsheetID,
-      range,
-      valueInputOption: 'USER_ENTERED',
-      resource: {
-        values: dataToWrite,
-      },
-    });
-    return response;
-  };
-
   const handleSubmit = async () => {
     if (selectedFiles.length === 0) {
       setTemporaryError('fileUpload.errorNoFilesSelected');
@@ -277,6 +223,9 @@ function App() {
     setHighlightButton(false);
 
     try {
+      const newFilename = t('fileUpload.defaultCopyName', {
+        dateTime: new Date().toLocaleString(),
+      });
       const prompt = import.meta.env.VITE_PROMPT;
       const aiData = await sendAiRequest(
         API_KEY,
@@ -286,18 +235,22 @@ function App() {
         AI_SCHEMA_TEXT
       );
 
-      const copiedFile = await copyFile(SHEETS_TEMPLATE_ID);
-      if (!copiedFile || !copiedFile.id) {
+      const newSheet = await createNewSheetFromTemplate(
+        newFilename,
+        BATCH_UPDATE_REQUEST
+      );
+      if (!newSheet || !newSheet.spreadsheetId) {
         setError('messages.errorCopyFile');
         setIsAwaitingResponse(false);
         return;
       }
-      await writeToSpreadsheet(copiedFile.id, aiData, SHEETS_RANGE);
-      if (copiedFile.webViewLink) {
-        setSuccessLink(copiedFile.webViewLink);
-        window.open(copiedFile.webViewLink);
+
+      await writeToSpreadsheet(newSheet.spreadsheetId, aiData, SHEETS_RANGE);
+      if (newSheet.spreadsheetUrl) {
+        setSuccessLink(newSheet.spreadsheetUrl);
+        window.open(newSheet.spreadsheetUrl);
+        setSelectedFiles([]);
       }
-      setSelectedFiles([]);
     } catch (err) {
       console.error('Error during processing:', err);
       const errorMsg =
