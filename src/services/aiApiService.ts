@@ -14,19 +14,10 @@ const fileToGenerativePart = async (file: File): Promise<Part> => {
     };
     reader.onerror = (event) => {
       const fileReaderError = event.target?.error;
-      if (fileReaderError) {
-        reject(
-          new Error(
-            `FileReader error on file ${file.name}: ${fileReaderError.name} - ${fileReaderError.message}`
-          )
-        );
-      } else {
-        reject(
-          new Error(
-            `FileReader failed on file ${file.name} with an unknown error.`
-          )
-        );
-      }
+      const errorMessage = fileReaderError
+        ? `FileReader error on file ${file.name}: ${fileReaderError.name} - ${fileReaderError.message}`
+        : `FileReader failed on file ${file.name} with an unknown error.`;
+      reject(new Error(errorMessage)); // This generic message will be wrapped by App.tsx
     };
     reader.readAsDataURL(file);
   });
@@ -40,8 +31,18 @@ export const sendAiRequest = async (
   prompt: string,
   responseSchema: Schema
 ): Promise<string> => {
-  if (files.length === 0) throw new Error('No files uploaded.');
-  if (!prompt) throw new Error('AI service received an empty prompt!');
+  if (!apiKey) {
+    throw new Error('messages.errorApiKeyMissing');
+  }
+  if (files.length === 0) {
+    throw new Error('fileUpload.errorNoFilesSelected');
+  }
+  if (!prompt) {
+    throw new Error('messages.errorAIPromptMissing');
+  }
+  if (!responseSchema || Object.keys(responseSchema).length === 0) {
+    throw new Error('messages.errorAISchemaMissing');
+  }
 
   const genAI = new GoogleGenAI({ apiKey });
 
@@ -49,10 +50,9 @@ export const sendAiRequest = async (
     const textPart: Part = { text: prompt };
     const imagePartsPromises = files.map((file) => fileToGenerativePart(file));
     const imageParts = await Promise.all(imagePartsPromises);
-
     const requestPartsForContent: Part[] = [textPart, ...imageParts];
 
-    const response: GenerateContentResponse =
+    const genAIResponse: GenerateContentResponse =
       await genAI.models.generateContent({
         model,
         contents: requestPartsForContent,
@@ -62,18 +62,18 @@ export const sendAiRequest = async (
         },
       });
 
-    if (!response.text) {
-      throw new Error(
-        'Received a successful, but empty response from the AI API!'
-      );
+    if (!genAIResponse.text) {
+      throw new Error('messages.errorAIResponse');
     }
-    return response.text;
-  } catch (error) {
+    return genAIResponse.text;
+  } catch (error: unknown) {
     console.error('Error calling AI API with @google/genai SDK:', error);
     if (error instanceof Error) {
-      throw new Error(`SDK Error: ${error.message}`);
+      // Re-throw SDK's error message; App.tsx will handle translation/wrapping.
+      throw new Error(error.message);
     }
-    throw new Error('An unknown error occurred while calling the AI API.');
+    // Fallback for non-Error instances or other unexpected issues from the SDK.
+    throw new Error('messages.errorAIUnknown');
   }
 };
 
@@ -81,34 +81,41 @@ export const jsonResponseTo2DArray = (
   jsonText: string,
   schema: Schema
 ): string[][] => {
-  const data: unknown = JSON.parse(jsonText);
+  try {
+    const data: unknown = JSON.parse(jsonText);
 
-  // Ensure we have an array of objects
-  if (
-    !Array.isArray(data) ||
-    !data.every((item) => typeof item === 'object' && item !== null)
-  ) {
-    throw new Error('Expected JSON response to be an array of objects');
-  }
+    if (
+      !Array.isArray(data) ||
+      !data.every((item) => typeof item === 'object' && item !== null)
+    ) {
+      throw new Error('messages.errorAISchema'); // AI response structure mismatch
+    }
 
-  // Extract property names from schema in order
-  const properties = schema.items?.properties;
-  if (!properties) {
-    throw new Error('Schema must have items.properties defined!');
-  }
+    const properties = schema.items?.properties;
+    if (!properties) {
+      // Error in the provided schema definition itself.
+      throw new Error('messages.errorAISchemaDefinitionInvalid');
+    }
 
-  // Get property names in the order they appear in the schema
-  const propertyNames = Object.keys(properties);
-
-  // Convert each object to an array of string values
-  const result: string[][] = data.map((item: Record<string, unknown>) => {
-    return propertyNames.map((propName) => {
-      const value = item[propName];
-      // Convert to string - this should never be an object, so we don't care about [object Object] shenanigans
-      // eslint-disable-next-line @typescript-eslint/no-base-to-string
-      return value !== null && value !== undefined ? String(value) : '';
+    const propertyNames = Object.keys(properties);
+    const result: string[][] = data.map((item: Record<string, unknown>) => {
+      return propertyNames.map((propName) => {
+        const value = item[propName];
+        // Convert to string; null/undefined become empty strings.
+        // eslint-disable-next-line @typescript-eslint/no-base-to-string
+        return value !== null && value !== undefined ? String(value) : '';
+      });
     });
-  });
-
-  return result;
+    return result;
+  } catch (parseError: unknown) {
+    console.error(
+      "Failed to parse AI's JSON response or map to 2D array:",
+      parseError
+    );
+    if (parseError instanceof SyntaxError) {
+      throw new Error('messages.errorAIJsonParse'); // Specific error for JSON parsing failures.
+    }
+    // Generic error for other issues during data transformation.
+    throw new Error('messages.errorAIDataTransformation');
+  }
 };

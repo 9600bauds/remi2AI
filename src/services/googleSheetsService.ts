@@ -1,22 +1,20 @@
-import i18n from '../i18n';
-
 export const createNewSheetFromTemplate = async (
   templateTitle: string,
   batchUpdatePayload: gapi.client.sheets.Request[]
 ): Promise<gapi.client.sheets.Spreadsheet> => {
   // 1. Check if GAPI client for Sheets is ready
   if (!gapi?.client?.sheets) {
-    // You might want a more specific error message key for sheets
-    throw new Error(
-      i18n.t('messages.errorGapiClientSheetsNotReady', {
-        service: 'Google Sheets API',
-      })
-    );
+    throw new Error('messages.errorGapiClientNotReady');
   }
-
   // 2. Check for access token
   if (!gapi.client.getToken()) {
-    throw new Error(i18n.t('messages.errorAccessTokenMissing'));
+    throw new Error('messages.errorAccessTokenMissing');
+  }
+  if (!templateTitle) {
+    throw new Error('messages.errorTemplateTitleMissing');
+  }
+  if (!batchUpdatePayload || batchUpdatePayload.length === 0) {
+    throw new Error('messages.errorBatchUpdatePayloadMissing');
   }
 
   try {
@@ -26,8 +24,6 @@ export const createNewSheetFromTemplate = async (
         properties: {
           title: templateTitle,
         },
-        // By default, a new spreadsheet is created with one sheet (tab) which usually has sheetId: 0.
-        // The batchUpdatePayload you provided targets sheetId: 0, which is perfect.
       },
       fields: 'spreadsheetId,spreadsheetUrl', // Fields to include in the response
     });
@@ -35,30 +31,31 @@ export const createNewSheetFromTemplate = async (
     const newSpreadsheet = createSheetRequest.result;
 
     if (!newSpreadsheet.spreadsheetId || !newSpreadsheet.spreadsheetUrl) {
-      // You might want a more specific error message key
-      throw new Error(i18n.t('messages.errorCreatingSpreadsheet'));
+      throw new Error('messages.errorCreatingSpreadsheet');
     }
 
     // 4. Apply the batch update to the newly created spreadsheet
-    // The batchUpdatePayload's 'requests' should already contain the correct sheetId (e.g., 0 for the first sheet)
-    // for the operations within that payload.
     await gapi.client.sheets.spreadsheets.batchUpdate({
       spreadsheetId: newSpreadsheet.spreadsheetId,
       resource: { requests: batchUpdatePayload },
     });
-    console.log(newSpreadsheet);
 
     // 5. Return the ID and URL of the new, templated spreadsheet
     return newSpreadsheet;
   } catch (error: unknown) {
-    console.error('Error creating sheet from template:', error);
-    // Try to extract a more specific error message from the GAPI error response
-    const detailMessage = error?.result?.error?.message || error.message;
-    throw new Error(
-      i18n.t('messages.errorApplyingTemplateToSheet', {
-        error: detailMessage || 'Unknown error',
-      })
-    );
+    console.error('Error in createNewSheetFromTemplate:', error);
+    // Attempt to extract a more specific error message from the GAPI error response.
+    // App.tsx's catch block will handle wrapping this message if it's not a direct i18n key.
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    const detailMessage =
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
+      (error as any)?.result?.error?.message || (error as Error)?.message;
+    if (detailMessage) {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+      throw new Error(detailMessage);
+    }
+    // Generic fallback key if no specific message could be extracted from GAPI error.
+    throw new Error('messages.errorApplyingTemplateToSheet');
   }
 };
 
@@ -68,22 +65,43 @@ export const writeToSpreadsheet = async (
   range: string
 ): Promise<gapi.client.Response<gapi.client.sheets.UpdateValuesResponse>> => {
   if (!gapi?.client?.sheets) {
-    throw new Error(i18n.t('messages.errorGapiClientNotReady'));
+    throw new Error('messages.errorGapiClientNotReady');
   }
   if (!gapi.client.getToken()) {
-    throw new Error(i18n.t('messages.errorAccessTokenMissing'));
+    throw new Error('messages.errorAccessTokenMissing');
   }
   if (!dataToWrite || dataToWrite.length === 0) {
-    throw new Error(i18n.t('messages.errorNoDataToWrite'));
+    throw new Error('messages.errorNoDataToWrite');
+  }
+  if (!spreadsheetID) {
+    throw new Error('messages.errorSpreadsheetIdMissing');
+  }
+  if (!range) {
+    throw new Error('messages.errorRangeMissing');
   }
 
-  const response = await gapi.client.sheets.spreadsheets.values.update({
-    spreadsheetId: spreadsheetID,
-    range,
-    valueInputOption: 'USER_ENTERED',
-    resource: {
-      values: dataToWrite,
-    },
-  });
-  return response;
+  try {
+    const response = await gapi.client.sheets.spreadsheets.values.update({
+      spreadsheetId: spreadsheetID,
+      range,
+      valueInputOption: 'USER_ENTERED', // Determines how input data is interpreted. 'USER_ENTERED' means formulas are calculated, etc.
+      resource: {
+        values: dataToWrite,
+      },
+    });
+    return response;
+  } catch (error: unknown) {
+    console.error('Error writing to spreadsheet:', error);
+    // Attempt to extract a more specific error message from the GAPI error response.
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    const detailMessage =
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
+      (error as any)?.result?.error?.message || (error as Error)?.message;
+    if (detailMessage) {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+      throw new Error(detailMessage);
+    }
+    // Generic fallback key for errors during the write operation.
+    throw new Error('messages.errorWritingToSheet');
+  }
 };

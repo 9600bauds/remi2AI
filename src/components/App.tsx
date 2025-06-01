@@ -259,21 +259,31 @@ function App() {
       }
     } catch (err) {
       console.error('Error during processing:', err);
-      const errorMsg =
-        err instanceof Error ? err.message : t('messages.errorUnknown');
-      if (
-        err instanceof Error &&
-        (err.message === t('messages.errorGapiClientNotReady') ||
-          err.message === t('messages.errorAccessTokenMissing') ||
-          err.message === t('messages.errorNoDataToWrite'))
-      ) {
-        setError(err.message);
+      let processedError: LocalizedError = null;
+
+      if (err instanceof Error) {
+        // Check if the error message itself IS a translation key
+        if (i18n.exists(err.message)) {
+          processedError = err.message; // The error message is a direct key
+        } else {
+          // The error message is not a direct key, so use a generic wrapper key
+          // and pass the original error message as a parameter.
+          processedError = {
+            key: 'messages.errorProcessingGeneric', // Or a more specific key if you can determine one
+            params: { message: err.message },
+          };
+        }
+      } else if (typeof err === 'string' && i18n.exists(err)) {
+        // If a raw string key was thrown (less common, but possible)
+        processedError = err;
+      } else if (typeof err === 'object' && err !== null && 'key' in err) {
+        // If an object { key: string, params?: ... } was thrown
+        processedError = err as LocalizedError; // Cast, assuming it matches the structure
       } else {
-        setError({
-          key: 'messages.errorProcessingGeneric',
-          params: { message: errorMsg },
-        });
+        // Fallback for truly unknown errors
+        processedError = 'messages.errorUnknown';
       }
+      setTemporaryError(processedError);
     } finally {
       setIsAwaitingResponse(false);
     }
