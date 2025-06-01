@@ -45,7 +45,7 @@
     "processingComplete": "Procesamiento Completo!",
     "dataProcessed": "Sus datos han sido procesados exitosamente.",
     "openSpreadsheet": "Abrir Hoja de Cálculo",
-    "copyJson": "Copiar Datos",
+    "copyJson": "Copiar JSON",
     "errorCopyFile": "No se pudo copiar el archivo de plantilla.",
     "errorGapiInit": "Error al inicializar los servicios de Google: {{message}}",
     "errorGapiLoad": "Error al cargar la librería de servicios de Google.",
@@ -77,7 +77,13 @@
     "errorSpreadsheetIdMissing": "Falta el ID de la hoja de cálculo. No se pueden escribir datos.",
     "errorRangeMissing": "Falta el rango de la hoja de cálculo. No se pueden escribir datos.",
     "errorWritingToSheet": "Ocurrió un error al escribir datos en la hoja de cálculo.",
-    "errorApplyingTemplateToSheet": "Error al aplicar el formato de plantilla a la nueva hoja: {{error}}"
+    "errorApplyingTemplateToSheet": "Error al aplicar el formato de plantilla a la nueva hoja: {{error}}",
+    "jsonCopiedSuccess": "Copiado!",
+    "errorNoJsonToCopy": "No hay datos JSON disponibles para copiar.",
+    "jsonCopiedToClipboard": "¡Datos JSON copiados al portapapeles!",
+    "errorCopyJsonFailed": "Error al copiar los datos JSON al portapapeles.",
+    "copyJsonTooltip": "Copiar la salida JSON cruda de la IA a su portapapeles.",
+    "openSpreadsheetTooltip": "Abrir la Hoja de Cálculo de Google recién creada en una nueva pestaña."
   },
   "settingsModal": {
     "title": "Configuración de la Aplicación",

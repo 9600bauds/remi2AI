@@ -45,7 +45,7 @@
     "processingComplete": "Processing Complete!",
     "dataProcessed": "Your data has been processed successfully.",
     "openSpreadsheet": "Open Spreadsheet",
-    "copyJson": "Copy Data",
+    "copyJson": "Copy JSON",
     "errorCopyFile": "Could not copy the template file.",
     "errorGapiInit": "Failed to initialize Google services: {{message}}",
     "errorGapiLoad": "Failed to load Google services library.",
@@ -77,7 +77,13 @@
     "errorSpreadsheetIdMissing": "Spreadsheet ID is missing. Cannot write data.",
     "errorRangeMissing": "Spreadsheet range is missing. Cannot write data.",
     "errorWritingToSheet": "An error occurred while writing data to the spreadsheet.",
-    "errorApplyingTemplateToSheet": "Failed to apply template formatting to the new sheet: {{error}}"
+    "errorApplyingTemplateToSheet": "Failed to apply template formatting to the new sheet: {{error}}",
+    "jsonCopiedSuccess": "Copied!",
+    "errorNoJsonToCopy": "There is no JSON data available to copy.",
+    "jsonCopiedToClipboard": "JSON data copied to clipboard!",
+    "errorCopyJsonFailed": "Failed to copy JSON data to clipboard.",
+    "copyJsonTooltip": "Copy the raw JSON output from the AI to your clipboard.",
+    "openSpreadsheetTooltip": "Open the newly created Google Sheet in a new tab."
   },
   "settingsModal": {
     "title": "Application Settings",

@@ -35,6 +35,7 @@ function App() {
   const [highlightButton, setHighlightButton] = useState<boolean>(false);
   const [resultLink, setresultLink] = useState<string | null>(null);
   const [resultJson, setresultJson] = useState<string | null>(null);
+  const [resultCopied, setResultCopied] = useState<boolean>(false);
   const [error, setError] = useState<LocalizedError>(null);
   const [errorTimeout, setErrorTimeout] = useState<NodeJS.Timeout | null>(null);
 
@@ -203,9 +204,18 @@ function App() {
     }
   };
 
-  const copyJsonToClipboard = () => {
-    //todo: copy json result to clipboard here
-    alert('Todo');
+  const copyJsonToClipboard = async () => {
+    if (!resultJson) {
+      setTemporaryError({ key: 'messages.errorNoJsonToCopy' });
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(resultJson);
+      setResultCopied(true);
+    } catch (err) {
+      console.error('Failed to copy JSON to clipboard:', err);
+      setTemporaryError({ key: 'messages.errorCopyJsonFailed' });
+    }
   };
 
   const handleSubmit = async () => {
@@ -221,27 +231,30 @@ function App() {
     setIsAwaitingResponse(true);
     setError(null);
     setresultLink(null);
+    setresultJson(null);
+    setResultCopied(false);
     setHighlightButton(false);
 
     try {
       const newFilename = t('fileUpload.defaultCopyName', {
         dateTime: new Date().toLocaleString(),
       });
-      const jsonResult = await sendAiRequest(
+      const rawJsonResult = await sendAiRequest(
         API_KEY,
         AI_MODEL,
         selectedFiles,
         AI_PROMPT,
         AI_SCHEMA
       );
-      const arrayResult = jsonResponseTo2DArray(jsonResult, AI_SCHEMA);
+
+      const arrayResult = jsonResponseTo2DArray(rawJsonResult, AI_SCHEMA);
 
       const newSheet = await createNewSheetFromTemplate(
         newFilename,
         BATCH_UPDATE_REQUEST
       );
       if (!newSheet || !newSheet.spreadsheetId) {
-        setError('messages.errorCopyFile');
+        // Error handled by createNewSheetFromTemplate throwing new Error('messages.errorCreatingSpreadsheet')
         setIsAwaitingResponse(false);
         return;
       }
@@ -253,34 +266,28 @@ function App() {
       );
       if (newSheet.spreadsheetUrl) {
         setresultLink(newSheet.spreadsheetUrl);
-        setresultJson(jsonResult);
-        window.open(newSheet.spreadsheetUrl);
+        setresultJson(rawJsonResult);
         setSelectedFiles([]);
+        window.open(newSheet.spreadsheetUrl);
       }
     } catch (err) {
       console.error('Error during processing:', err);
       let processedError: LocalizedError = null;
 
       if (err instanceof Error) {
-        // Check if the error message itself IS a translation key
         if (i18n.exists(err.message)) {
-          processedError = err.message; // The error message is a direct key
+          processedError = err.message;
         } else {
-          // The error message is not a direct key, so use a generic wrapper key
-          // and pass the original error message as a parameter.
           processedError = {
-            key: 'messages.errorProcessingGeneric', // Or a more specific key if you can determine one
+            key: 'messages.errorProcessingGeneric',
             params: { message: err.message },
           };
         }
       } else if (typeof err === 'string' && i18n.exists(err)) {
-        // If a raw string key was thrown (less common, but possible)
         processedError = err;
       } else if (typeof err === 'object' && err !== null && 'key' in err) {
-        // If an object { key: string, params?: ... } was thrown
-        processedError = err as LocalizedError; // Cast, assuming it matches the structure
+        processedError = err as LocalizedError;
       } else {
-        // Fallback for truly unknown errors
         processedError = 'messages.errorUnknown';
       }
       setTemporaryError(processedError);
@@ -396,31 +403,34 @@ function App() {
               </div>
             </div>
           )}
+
           {resultLink && resultJson && !error && (
             <div
-              className={`alert alert-success ${styles.alertSuccess}`}
+              className={`alert alert-success d-flex gap-2 flex-column flex-sm-row align-items-center justify-content-center ${styles.alertSuccess}`}
               role="alert"
             >
-              <div className={styles.alertContent}>
-                <i className="bi bi-check-circle-fill me-2"></i>
-                <div>
-                  <strong>{t('messages.processingComplete')}</strong>{' '}
-                  {t('messages.dataProcessed')}
-                </div>
+              <i className="bi bi-check-circle-fill me-2"></i>
+              <div>
+                <strong>{t('messages.processingComplete')}</strong>{' '}
+                {t('messages.dataProcessed')}
               </div>
               <button
                 type="button"
-                className="btn btn-success btn-sm ms-3"
+                className="btn btn-outline-success btn-sm"
                 onClick={copyJsonToClipboard}
+                title={t('messages.copyJsonTooltip')}
               >
-                <i className="bi bi-box-arrow-up-right me-1"></i>
+                <i
+                  className={`bi ${resultCopied ? 'bi-check-lg' : 'bi-clipboard-check'} me-1`}
+                ></i>
                 {t('messages.copyJson')}
               </button>
               <a
                 href={resultLink}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="btn btn-success btn-sm ms-3"
+                className="btn btn-success btn-sm"
+                title={t('messages.openSpreadsheetTooltip')}
               >
                 <i className="bi bi-box-arrow-up-right me-1"></i>
                 {t('messages.openSpreadsheet')}
