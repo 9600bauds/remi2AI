@@ -18,6 +18,7 @@ export const AI_PROMPT: string = `You are an expert at data entry, digitizing a 
 Your task is to identify and list all the items presented in the scanned invoice.
 Analyze the provided images, gather the text that appears on the invoice, and then identify each item.
 The layout of the invoice usually follows a table-like structure, though it may not always be intuitive.
+Look at all the columns, their titles, and their contents, and try to deduce which one corresponds to each property in the output schema.
 Some of the text may be hard to read (obscured by stamps or writing), pay careful attention.
 Sometimes, the printer used to print this invoice may have been misaligned, resulting in the text being hard to read or askew.
 After identifying all the items, DOUBLE-CHECK to make sure you have not missed any.
@@ -30,17 +31,17 @@ export const AI_SCHEMA: Schema = {
     properties: {
       itemName: {
         type: Type.STRING,
-        description: 'Name of the item, exactly as it appears on the invoice.',
+        description: 'Name of the item, exactly as it appears on the invoice. It may sometimes appear in a column titled \'Desc\' (short for Descripción).',
       },
       amount: {
         type: Type.NUMBER,
         description:
-          'The amount for this item, exactly as it appears on the invoice.',
+          'The amount for this item, exactly as it appears on the invoice. It will usually be whole numbers, do not confuse it with the price of the item (generally large and with many significant decimals) or the tax% (usually exactly 21% or 10.5%). It will usually be in a column titled \'Cant\' (short for Cantidad), or \'U\' (short for Unidades).',
       },
       SKU: {
         type: Type.STRING,
         description:
-          "Optional: The provider's internal code for this item, if it appears.",
+          "Optional: The provider's internal code for this item, if it appears. It will usually appear in a column titled \'Código\' or \'Alias\'.",
       },
     },
     required: ['itemName', 'amount'],
