@@ -15,11 +15,10 @@ https://github.com/user-attachments/assets/a53b35be-86f2-4e68-aebc-3c43c8bf644c
 Digitizing paper invoices was a time-intensive process in my workplace, and attempts at automating it proved elusive for many years due to the simple fact that the invoices received lacked any sort of standard for formatting and layout.  
 Standard OCR techniques couldn't deal with the massive variety present in the invoices, or with the fact that printing and scanning imperfections sometimes made them hard to read, even for a human.
 
-Multimodal AI proved to be a surprisingly reliable and general solution to this task.  
-Its image recognition rivals the best OCR out there, and it can make on-the-fly assumptions on how the invoice is formatted, even for new layouts that the program has never seen before.  
+Multimodal AI proved to be a surprisingly reliable and general solution to this task: Its image recognition rivals the best OCR out there, and it can make on-the-fly assumptions on how the invoice is formatted, even for new layouts that the program has never seen before.  
 Using prompt engineering and a structured output, it's possible to automatically extract only the relevant data from a scanned invoice, which can then be exported into a spreadsheet.
 
-I created a simple web UI where the user may upload a scanned image and click "Process". No further user input is needed as the API calls are made to Google AI Studio, and then the structured output is then sent to the Google Sheets API. The spreadsheet is then automatically opened in a new tab.
+I created a simple web UI where the user may upload a scanned image and click "Process". No further user input is needed as the API calls are made to Google AI Studio, and the structured output is then converted and sent to the Google Sheets API. The spreadsheet is then automatically opened in a new tab.
 
 # Key Features
  - User-friendly file upload, leveraging `react-dropzone` to allow for drag-and-drop functionality and image previews.
@@ -50,6 +49,7 @@ The only downside of a pure front-end is that it is incapable of securely storin
 This was considered an acceptable limitation, as the API key is relatively unimportant in this case: The Google Cloud console can already restrict usage of the key appropriately, and since even purely free Gemini Vision models work well for this task, a free API key can be used. For the live demo, I've provided a free key with appropriate limitations.
 
 ```mermaid
+%%{init: {'theme': 'neutral' }}%%
 graph TD
 	User
 	
