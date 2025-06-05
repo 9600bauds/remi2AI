@@ -54,7 +54,7 @@ export const BATCH_UPDATE_REQUEST: gapi.client.sheets.Request[] = [
   {
     updateDimensionProperties: {
       range: { sheetId: 0, dimension: 'COLUMNS', startIndex: 0, endIndex: 1 },
-      properties: { pixelSize: 293 }, // Column A
+      properties: { pixelSize: 300 }, // Column A
       fields: 'pixelSize',
     },
   },
@@ -75,7 +75,7 @@ export const BATCH_UPDATE_REQUEST: gapi.client.sheets.Request[] = [
   {
     updateDimensionProperties: {
       range: { sheetId: 0, dimension: 'COLUMNS', startIndex: 3, endIndex: 4 },
-      properties: { pixelSize: 110 }, // Column D
+      properties: { pixelSize: 216 }, // Column D
       fields: 'pixelSize',
     },
   },
@@ -151,6 +151,10 @@ export const BATCH_UPDATE_REQUEST: gapi.client.sheets.Request[] = [
                 horizontalAlignment: 'CENTER',
                 verticalAlignment: 'MIDDLE',
                 textFormat: { fontFamily: 'Arial', fontSize: 24 },
+                numberFormat: {
+                  type: 'TEXT', // Treat as text to preserve the asterisks literally
+                  pattern: '"*"#"*"', // Wrap the number with asterisks for barcode legibility
+                },
               },
             },
             {
@@ -192,7 +196,7 @@ export const BATCH_UPDATE_REQUEST: gapi.client.sheets.Request[] = [
   },
   // 5. Format Data Columns (Rows 2-23)
   {
-    // Column A (Barcode font) for A2:A23
+    // Column A (Barcode font)
     repeatCell: {
       range: {
         sheetId: 0,
@@ -213,7 +217,7 @@ export const BATCH_UPDATE_REQUEST: gapi.client.sheets.Request[] = [
     },
   },
   {
-    // Column B (Desc) for B2:B23
+    // Column B (Desc)
     repeatCell: {
       range: {
         sheetId: 0,
@@ -235,7 +239,7 @@ export const BATCH_UPDATE_REQUEST: gapi.client.sheets.Request[] = [
     },
   },
   {
-    // Column C (#) for C2:C23
+    // Column C (#)
     repeatCell: {
       range: {
         sheetId: 0,
@@ -256,7 +260,7 @@ export const BATCH_UPDATE_REQUEST: gapi.client.sheets.Request[] = [
     },
   },
   {
-    // Column D (Notas - first part styling) for D2:D23 (original HTML had a style change at row 39, this simplifies to one style for D2:D23)
+    // Column D (Notas)
     repeatCell: {
       range: {
         sheetId: 0,
@@ -269,8 +273,7 @@ export const BATCH_UPDATE_REQUEST: gapi.client.sheets.Request[] = [
         userEnteredFormat: {
           horizontalAlignment: 'CENTER',
           verticalAlignment: 'MIDDLE',
-          // Using the 10pt font style that was applied to the earlier rows in the HTML for Notas
-          textFormat: { fontFamily: 'Arial', fontSize: 10 },
+          textFormat: { fontFamily: 'Arial', fontSize: 9 },
           wrapStrategy: 'WRAP',
         },
       },
