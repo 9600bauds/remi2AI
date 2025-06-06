@@ -23,8 +23,8 @@ I created a simple web UI where the user may upload a scanned image and click "P
 # Key Features
  - User-friendly file upload, leveraging `react-dropzone` to allow for drag-and-drop functionality and image previews.
  - AI-powered data extraction using Google AI Studio: It has a rich API which allows for detailed prompts, thinking tokens, and a well-defined structured output. The result is a surprisingly reliable JSON digitization of the data requested in the schema.
- - Automated creation of a new Google Sheet: The Google Cloud API is similarly rich and allows you to create new spreadsheets inside each user's Google Drive
- - Secure Google Sign-In (OAuth 2.0 via `@react-oauth/google`): OAuth allows each user to sign into their Google account, making sure all processed data is secure, and the created sheet is owned by the user.
+ - Automated creation of a new Google Sheet: The Google Cloud API is similarly rich and allows you to create new spreadsheets inside the end user's Google Drive.
+ - Secure Google Sign-In (OAuth 2.0 via `@react-oauth/google`): OAuth allows each user to sign into their Google account, making sure all processed data is secure, and the created sheet is owned by the end user.
  - Data population into the newly created Google Sheet: Google Sheets API allows for a template to be applied, and the structured data to be uploaded to a predefined range.
  - Multi-language support (English/Spanish) using `i18next`.
  - Responsive user interface built with Bootstrap.
@@ -43,10 +43,12 @@ I created a simple web UI where the user may upload a scanned image and click "P
 
 ## System Architecture
 The system is a pure front-end which stores the current state inside a React component.  
-Due to the generous Google APIs, a back-end was considered unnecessary. In the future, more features such as user settings (prompt/schema configuration etc) can also be implemented without the need for a back-end via the `auth/drive.appdata` scope in the already implemented google API.  
+Due to the generous Google APIs and the customization they allow via the Google Cloud Project console, a dedicated back-end was considered unnecessary.  
 
 The only downside of a pure front-end is that it is incapable of securely storing an API key without exposing it to the user.  
-This was considered an acceptable limitation, as the API key is relatively unimportant in this case: The Google Cloud console can already restrict usage of the key appropriately, and since even purely free Gemini Vision models work well for this task, a free API key can be used. For the live demo, I've provided a free key with appropriate limitations.
+This was considered an acceptable limitation, as the API key is relatively unimportant in this case: The Google Cloud console can already restrict usage of the key appropriately, and a free API key can be used with no budget allocated, since  even purely free Gemini Vision models work well for this task. For the live demo, I've provided a free key with appropriate limitations.  
+
+In the future, more features such as user settings (prompt/schema configuration etc) can also be implemented without the need for a back-end via the `auth/drive.appdata` scope in the already implemented google API.  
 
 ```mermaid
 %%{init: {'theme': 'neutral' }}%%
@@ -123,7 +125,7 @@ npm install
 
     ```env
     VITE_GOOGLE_CLIENT_ID="YOUR_GOOGLE_OAUTH_CLIENT_ID"
-    VITE_GOOGLE_API_KEY="YOUR_GEMINI_API_KEY_OR_GOOGLE_CLOUD_PROJECT_API_KEY"
+    VITE_GOOGLE_API_KEY="YOUR_GOOGLE_CLOUD_PROJECT_API_KEY"
     ```
 
     **To get these values:**  
