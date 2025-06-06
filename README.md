@@ -4,7 +4,7 @@ remi2AI is a simple web application that helps automate data entry by transcribi
 
 # Live Demo
 
-Try it for yourself at: [9600bauds.github.io/remi2AI](https://9600bauds.github.io/remi2AI/) (if you need a suitable invoice image, save [this example](/public/demo_image.jpg) to your device!)
+Try it for yourself at: [9600bauds.github.io/remi2AI](https://9600bauds.github.io/remi2AI/) (if you need a suitable invoice image, save [this example](https://raw.githubusercontent.com/9600bauds/remi2AI/refs/heads/main/public/demo_image.jpg) to your device!)
 
 # Demonstration video
 
