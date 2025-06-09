@@ -21,7 +21,8 @@ The layout of the invoice usually follows a table-like structure, though it may 
 Look at all the columns, their titles, and their contents, and try to deduce which one corresponds to each property in the output schema.
 Some of the text may be hard to read (obscured by stamps or writing), pay careful attention.
 Sometimes, the printer used to print this invoice may have been misaligned, resulting in the text being hard to read or askew.
-After identifying all the items, DOUBLE-CHECK to make sure you have not missed any.
+First, identify all the items according to your best ability, and identify any potential error-inducing factors that you can see.
+Then, after identifying all the items, DOUBLE-CHECK to make sure you have not missed any.
 DOUBLE-CHECK also that you have not hallucinated any of the identified items - verify that the all truly exist in the images.
 When ready, provide a response according to the structured output.`;
 export const AI_SCHEMA: Schema = {

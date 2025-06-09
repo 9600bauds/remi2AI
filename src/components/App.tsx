@@ -36,6 +36,7 @@ function App() {
   const [resultLink, setresultLink] = useState<string | null>(null);
   const [resultJson, setresultJson] = useState<string | null>(null);
   const [resultCopied, setResultCopied] = useState<boolean>(false);
+  const [thoughts, setThoughts] = useState<string | null>(null);
   const [error, setError] = useState<LocalizedError>(null);
   const [errorTimeout, setErrorTimeout] = useState<NodeJS.Timeout | null>(null);
 
@@ -204,6 +205,10 @@ function App() {
     }
   };
 
+  const onPartReceived = (partText: string, isThought: boolean) => {
+    setThoughts(partText);
+  };
+
   const copyJsonToClipboard = async () => {
     if (!resultJson) {
       setTemporaryError({ key: 'messages.errorNoJsonToCopy' });
@@ -244,7 +249,8 @@ function App() {
         AI_MODEL,
         selectedFiles,
         AI_PROMPT,
-        AI_SCHEMA
+        AI_SCHEMA,
+        onPartReceived
       );
 
       const arrayResult = jsonResponseTo2DArray(rawJsonResult, AI_SCHEMA);
@@ -323,14 +329,18 @@ function App() {
     }
     if (isAwaitingResponse) {
       return (
-        <button type="button" className="btn btn-secondary btn-lg" disabled>
-          <span
-            className="spinner-border spinner-border-sm"
-            role="status"
-            aria-hidden="true"
-          ></span>
-          <span className="ms-2">{t('buttons.processing')}</span>
-        </button>
+        <>
+          {thoughts}
+          <button type="button" className="btn btn-secondary btn-lg" disabled>
+            <i className="bi bi-robot me-2"></i>
+            <span
+              className="spinner-border spinner-border-sm"
+              role="status"
+              aria-hidden="true"
+            ></span>
+            <span className="ms-2">{t('buttons.processing')}</span>
+          </button>
+        </>
       );
     }
 

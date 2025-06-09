@@ -1,9 +1,4 @@
-import {
-  GoogleGenAI,
-  type GenerateContentResponse,
-  type Part,
-  type Schema,
-} from '@google/genai';
+import { GoogleGenAI, type Part, type Schema } from '@google/genai';
 
 const fileToGenerativePart = async (file: File): Promise<Part> => {
   const base64EncodedString = await new Promise<string>((resolve, reject) => {
@@ -17,7 +12,7 @@ const fileToGenerativePart = async (file: File): Promise<Part> => {
       const errorMessage = fileReaderError
         ? `FileReader error on file ${file.name}: ${fileReaderError.name} - ${fileReaderError.message}`
         : `FileReader failed on file ${file.name} with an unknown error.`;
-      reject(new Error(errorMessage)); // This generic message will be wrapped by App.tsx
+      reject(new Error(errorMessage));
     };
     reader.readAsDataURL(file);
   });
@@ -26,10 +21,11 @@ const fileToGenerativePart = async (file: File): Promise<Part> => {
 
 export const sendAiRequest = async (
   apiKey: string,
-  model: string,
+  modelName: string,
   files: File[],
   prompt: string,
-  responseSchema: Schema
+  responseSchema: Schema,
+  onPartReceived: (partText: string, isThought: boolean) => void
 ): Promise<string> => {
   if (!apiKey) {
     throw new Error('messages.errorApiKeyMissing');
@@ -46,35 +42,62 @@ export const sendAiRequest = async (
 
   const genAI = new GoogleGenAI({ apiKey });
 
-  try {
-    const textPart: Part = { text: prompt };
-    const imagePartsPromises = files.map((file) => fileToGenerativePart(file));
-    const imageParts = await Promise.all(imagePartsPromises);
-    const requestPartsForContent: Part[] = [textPart, ...imageParts];
+  const imagePartsPromises = files.map((file) => fileToGenerativePart(file));
+  const imageParts = await Promise.all(imagePartsPromises);
+  const textPart: Part = { text: prompt };
 
-    const genAIResponse: GenerateContentResponse =
-      await genAI.models.generateContent({
-        model,
-        contents: requestPartsForContent,
-        config: {
-          responseMimeType: 'application/json',
-          responseSchema,
-        },
-      });
+  const contentStream = await genAI.models.generateContentStream({
+    model: modelName,
+    contents: [{ role: 'user', parts: [textPart, ...imageParts] }],
+    config: {
+      responseMimeType: 'application/json',
+      responseSchema: responseSchema,
+      thinkingConfig: {
+        includeThoughts: true,
+      },
+    },
+  });
 
-    if (!genAIResponse.text) {
-      throw new Error('messages.errorAIResponse');
+  const thoughtFragments: string[] = [];
+  const jsonFragments: string[] = [];
+
+  console.log('Starting to process stream...');
+  for await (const chunk of contentStream) {
+    console.log('Received chunk:', chunk);
+    if (chunk.candidates && chunk.candidates.length > 0) {
+      const candidate = chunk.candidates[0];
+      if (candidate.content && candidate.content.parts) {
+        for (const part of candidate.content.parts) {
+          if (part.text) {
+            if (part.thought === true) {
+              const thoughtFragment = part.text;
+              thoughtFragments.push(thoughtFragment);
+              onPartReceived(thoughtFragment, true);
+            } else {
+              const jsonFragment = part.text.trim();
+              jsonFragments.push(jsonFragment);
+              onPartReceived(jsonFragment, false);
+            }
+          }
+        }
+      }
     }
-    return genAIResponse.text;
-  } catch (error: unknown) {
-    console.error('Error calling AI API with @google/genai SDK:', error);
-    if (error instanceof Error) {
-      // Re-throw SDK's error message; App.tsx will handle translation/wrapping.
-      throw new Error(error.message);
-    }
-    // Fallback for non-Error instances or other unexpected issues from the SDK.
-    throw new Error('messages.errorAIUnknown');
   }
+  console.log('Stream processing finished.');
+
+  const finalStringToParse = jsonFragments.join('');
+  console.log('Final String to Parse (after outer trim):', finalStringToParse);
+
+  if (finalStringToParse) {
+    JSON.parse(finalStringToParse); // Validate final accumulated string
+    console.log('Final Accumulated JSON successfully parsed.');
+    console.log('Collected Thoughts:', thoughtFragments);
+    console.log('Collected JSON Fragments:', jsonFragments);
+    return finalStringToParse;
+  } else if (thoughtFragments.length > 0) {
+    console.warn('Only thoughts were received, no primary JSON output.');
+  }
+  throw new Error('messages.errorAIResponse');
 };
 
 export const jsonResponseTo2DArray = (
@@ -83,25 +106,20 @@ export const jsonResponseTo2DArray = (
 ): string[][] => {
   try {
     const data: unknown = JSON.parse(jsonText);
-
     if (
       !Array.isArray(data) ||
       !data.every((item) => typeof item === 'object' && item !== null)
     ) {
-      throw new Error('messages.errorAISchema'); // AI response structure mismatch
+      throw new Error('messages.errorAISchema');
     }
-
     const properties = schema.items?.properties;
     if (!properties) {
-      // Error in the provided schema definition itself.
       throw new Error('messages.errorAISchemaDefinitionInvalid');
     }
-
     const propertyNames = Object.keys(properties);
     const result: string[][] = data.map((item: Record<string, unknown>) => {
       return propertyNames.map((propName) => {
         const value = item[propName];
-        // Convert to string; null/undefined become empty strings.
         // eslint-disable-next-line @typescript-eslint/no-base-to-string
         return value !== null && value !== undefined ? String(value) : '';
       });
@@ -115,7 +133,6 @@ export const jsonResponseTo2DArray = (
     if (parseError instanceof SyntaxError) {
       throw new Error('messages.errorAIJsonParse'); // Specific error for JSON parsing failures.
     }
-    // Generic error for other issues during data transformation.
     throw new Error('messages.errorAIDataTransformation');
   }
 };
