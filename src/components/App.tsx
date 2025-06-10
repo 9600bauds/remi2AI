@@ -23,6 +23,7 @@ import {
   createNewSheetFromTemplate,
   writeToSpreadsheet,
 } from '../services/googleSheetsService';
+import Result from './Result';
 
 function App() {
   const { t, i18n } = useTranslation();
@@ -209,18 +210,14 @@ function App() {
     setThoughts(partText);
   };
 
-  const copyJsonToClipboard = async () => {
-    if (!resultJson) {
-      setTemporaryError({ key: 'messages.errorNoJsonToCopy' });
-      return;
-    }
-    try {
-      await navigator.clipboard.writeText(resultJson);
-      setResultCopied(true);
-    } catch (err) {
-      console.error('Failed to copy JSON to clipboard:', err);
-      setTemporaryError({ key: 'messages.errorCopyJsonFailed' });
-    }
+  const onResultCopied = () => {
+    setResultCopied(true);
+  };
+
+  const clearResult = () => {
+    setResultCopied(false);
+    setresultJson(null);
+    setresultLink(null);
   };
 
   const handleSubmit = async () => {
@@ -327,23 +324,6 @@ function App() {
         </button>
       );
     }
-    if (isAwaitingResponse) {
-      return (
-        <>
-          {thoughts}
-          <button type="button" className="btn btn-secondary btn-lg" disabled>
-            <i className="bi bi-robot me-2"></i>
-            <span
-              className="spinner-border spinner-border-sm"
-              role="status"
-              aria-hidden="true"
-            ></span>
-            <span className="ms-2">{t('buttons.processing')}</span>
-          </button>
-        </>
-      );
-    }
-
     if (selectedFiles.length === 0) {
       return (
         <button
@@ -399,56 +379,36 @@ function App() {
           setTemporaryError={setTemporaryError}
         />
 
-        <div className={styles.actionPanelWrapper}>
-          {error && (
-            <div className={`alert alert-danger ${styles.alert}`} role="alert">
-              <i className="bi bi-exclamation-triangle-fill me-2"></i>
-              <div>
-                <strong>{t('messages.error')}:</strong>{' '}
-                {typeof error === 'string'
-                  ? t(error)
-                  : error?.key
-                    ? t(error.key, error.params)
-                    : t('messages.errorUnknown')}
-              </div>
+        {error && (
+          <div
+            className={`alert alert-danger ${styles.errorContainer}`}
+            role="alert"
+          >
+            <i className="bi bi-exclamation-triangle-fill me-2"></i>
+            <div>
+              <strong>{t('messages.error')}:</strong>{' '}
+              {typeof error === 'string'
+                ? t(error)
+                : error?.key
+                  ? t(error.key, error.params)
+                  : t('messages.errorUnknown')}
             </div>
-          )}
+          </div>
+        )}
 
-          {resultLink && resultJson && !error && (
-            <div
-              className={`alert alert-success d-flex gap-2 flex-column flex-sm-row align-items-center justify-content-center ${styles.alertSuccess}`}
-              role="alert"
-            >
-              <i className="bi bi-check-circle-fill me-2"></i>
-              <div>
-                <strong>{t('messages.processingComplete')}</strong>{' '}
-                {t('messages.dataProcessed')}
-              </div>
-              <button
-                type="button"
-                className="btn btn-outline-success btn-sm"
-                onClick={copyJsonToClipboard}
-                title={t('messages.copyJsonTooltip')}
-              >
-                <i
-                  className={`bi ${resultCopied ? 'bi-check-lg' : 'bi-clipboard-check'} me-1`}
-                ></i>
-                {t('messages.copyJson')}
-              </button>
-              <a
-                href={resultLink}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="btn btn-success btn-sm"
-                title={t('messages.openSpreadsheetTooltip')}
-              >
-                <i className="bi bi-box-arrow-up-right me-1"></i>
-                {t('messages.openSpreadsheet')}
-              </a>
-            </div>
-          )}
+        {thoughts || resultJson || true ? (
+          <Result
+            thoughts={"swawy"}
+            resultJson={resultJson}
+            resultLink={resultLink}
+            resultCopied={resultCopied}
+            onResultCopied={onResultCopied}
+            setTemporaryError={setTemporaryError}
+            clearResult={clearResult}
+          />
+        ) : (
           <div className={styles.actionButtonWrapper}>{generateButton()}</div>
-        </div>
+        )}
       </main>
     </div>
   );

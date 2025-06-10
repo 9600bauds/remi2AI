@@ -32,12 +32,13 @@ export const AI_SCHEMA: Schema = {
     properties: {
       itemName: {
         type: Type.STRING,
-        description: 'Name of the item, exactly as it appears on the invoice. It may sometimes appear in a column titled \'Desc\' (short for Descripción).',
+        description:
+          "Name of the item, exactly as it appears on the invoice. It may sometimes appear in a column titled 'Desc' (short for Descripción).",
       },
       amount: {
         type: Type.NUMBER,
         description:
-          'The amount for this item, exactly as it appears on the invoice. It will usually be whole numbers, do not confuse it with the price of the item (generally large and with many significant decimals) or the tax% (usually exactly 21% or 10.5%). It will usually be in a column titled \'Cant\' (short for Cantidad), or \'U\' (short for Unidades).',
+          "The amount for this item, exactly as it appears on the invoice. It will usually be whole numbers, do not confuse it with the price of the item (generally large and with many significant decimals) or the tax% (usually exactly 21% or 10.5%). It will usually be in a column titled 'Cant' (short for Cantidad), or 'U' (short for Unidades).",
       },
       SKU: {
         type: Type.STRING,

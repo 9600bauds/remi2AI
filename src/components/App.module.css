@@ -16,6 +16,7 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
+  align-items: center;
   padding: clamp(0.5rem, 2.5vh, 1.5rem) /* Vertical: top and bottom */
     clamp(0.5rem, 2.5vw, 1.5rem); /* Horizontal: left and right */
   width: 100%;
@@ -34,18 +35,7 @@
   margin-bottom: 1rem;
 }
 
-.alert {
-  display: flex;
-  align-items: center;
-}
-
-.alertSuccess {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.alertContent {
+.errorContainer {
   display: flex;
   align-items: center;
 }
