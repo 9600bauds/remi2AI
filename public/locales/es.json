@@ -80,10 +80,11 @@
     "errorApplyingTemplateToSheet": "Error al aplicar el formato de plantilla a la nueva hoja: {{error}}",
     "jsonCopiedSuccess": "Copiado!",
     "errorNoJsonToCopy": "No hay datos JSON disponibles para copiar.",
-    "jsonCopiedToClipboard": "¡Datos JSON copiados al portapapeles!",
+    "jsonCopiedToClipboard": "Datos JSON copiados al portapapeles!",
     "errorCopyJsonFailed": "Error al copiar los datos JSON al portapapeles.",
     "copyJsonTooltip": "Copiar la salida JSON cruda de la IA a su portapapeles.",
-    "openSpreadsheetTooltip": "Abrir la Hoja de Cálculo de Google recién creada en una nueva pestaña."
+    "openSpreadsheetTooltip": "Abrir la Hoja de Cálculo de Google recién creada en una nueva pestaña.",
+    "awaitingThinkingTokens": "Pensando..."
   },
   "settingsModal": {
     "title": "Configuración de la Aplicación",

@@ -25,7 +25,7 @@ export const sendAiRequest = async (
   files: File[],
   prompt: string,
   responseSchema: Schema,
-  onPartReceived: (partText: string, isThought: boolean) => void
+  onPartReceived: (newThinkingParts: string[], newOutputParts: string[]) => void
 ): Promise<string> => {
   if (!apiKey) {
     throw new Error('messages.errorApiKeyMissing');
@@ -58,8 +58,8 @@ export const sendAiRequest = async (
     },
   });
 
-  const thoughtFragments: string[] = [];
-  const jsonFragments: string[] = [];
+  let thoughtFragments: string[] = [];
+  let jsonFragments: string[] = [];
 
   console.log('Starting to process stream...');
   for await (const chunk of contentStream) {
@@ -71,13 +71,18 @@ export const sendAiRequest = async (
           if (part.text) {
             if (part.thought === true) {
               const thoughtFragment = part.text;
-              thoughtFragments.push(thoughtFragment);
-              onPartReceived(thoughtFragment, true);
+              thoughtFragments = [
+                ...thoughtFragments,
+                thoughtFragment
+              ]
             } else {
               const jsonFragment = part.text.trim();
-              jsonFragments.push(jsonFragment);
-              onPartReceived(jsonFragment, false);
+              jsonFragments = [
+                ...jsonFragments,
+                jsonFragment
+              ]
             }
+            onPartReceived(thoughtFragments, jsonFragments)
           }
         }
       }

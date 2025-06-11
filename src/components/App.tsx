@@ -23,7 +23,7 @@ import {
   createNewSheetFromTemplate,
   writeToSpreadsheet,
 } from '../services/googleSheetsService';
-import Result from './Result';
+import ThoughtsPreview from './ThoughtsPreview';
 
 function App() {
   const { t, i18n } = useTranslation();
@@ -37,10 +37,12 @@ function App() {
   const [resultLink, setresultLink] = useState<string | null>(null);
   const [resultJson, setresultJson] = useState<string | null>(null);
   const [resultCopied, setResultCopied] = useState<boolean>(false);
-  const [thoughts, setThoughts] = useState<string | null>(null);
   const [error, setError] = useState<LocalizedError>(null);
   const [errorTimeout, setErrorTimeout] = useState<NodeJS.Timeout | null>(null);
 
+  const [thinkingParts, setThinkingParts] = useState<string[]>([]);
+  const [outputParts, setOutputParts] = useState<string[]>([]);
+  
   const dropZoneRef = useRef<DropZoneHandles>(null); // Ref for DropZone
 
   /**
@@ -88,7 +90,6 @@ function App() {
       });
     };
     loadGapiClient();
-    setTemporaryError('thing', 9999999);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   /**
@@ -207,9 +208,14 @@ function App() {
     }
   };
 
-  const onPartReceived = (partText: string, isThought: boolean) => {
-    setThoughts(partText);
+  const onPartReceived = (newThinkingParts: string[], newOutputParts: string[]) => {
+    setThinkingParts(newThinkingParts);
+    setOutputParts(newOutputParts);
   };
+  const clearParts = () => {
+    setThinkingParts([]);
+    setOutputParts([]);
+  }
 
   const onResultCopied = () => {
     setResultCopied(true);
@@ -237,6 +243,7 @@ function App() {
     setresultJson(null);
     setResultCopied(false);
     setHighlightButton(false);
+    clearParts();
 
     try {
       const newFilename = t('fileUpload.defaultCopyName', {
@@ -453,14 +460,9 @@ function App() {
         )}
 
         {isAwaitingResponse ? (
-          <Result
-            thoughts={thoughts}
-            resultJson={resultJson}
-            resultLink={resultLink}
-            resultCopied={resultCopied}
-            onResultCopied={onResultCopied}
-            setTemporaryError={setTemporaryError}
-            clearResult={clearResult}
+          <ThoughtsPreview
+            thinkingParts={thinkingParts}
+            outputParts={outputParts}
           />
         ) : (
           <div className={styles.actionButtonWrapper}>{generateButton()}</div>
