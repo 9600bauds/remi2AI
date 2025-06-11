@@ -30,11 +30,6 @@ export const AI_SCHEMA: Schema = {
   items: {
     type: Type.OBJECT,
     properties: {
-      itemName: {
-        type: Type.STRING,
-        description:
-          "Name of the item, exactly as it appears on the invoice. It may sometimes appear in a column titled 'Desc' (short for Descripción).",
-      },
       amount: {
         type: Type.NUMBER,
         description:
@@ -43,111 +38,103 @@ export const AI_SCHEMA: Schema = {
       SKU: {
         type: Type.STRING,
         description:
-          "Optional: The provider's internal code for this item, if it appears. It will usually appear in a column titled \'Código\' or \'Alias\'.",
+          "The provider's internal code for this item, if it appears. It will usually appear in a column titled Código or Alias.",
+      },
+      itemName: {
+        type: Type.STRING,
+        description:
+          "Name of the item, exactly as it appears on the invoice. It may sometimes appear in a column titled 'Desc' (short for Descripción).",
       },
     },
-    required: ['itemName', 'amount'],
-    propertyOrdering: ['itemName', 'amount', 'SKU'],
+    required: ['amount', 'SKU', 'itemName'],
+    propertyOrdering: ['amount', 'SKU', 'itemName'],
   },
 };
 
 export const BATCH_UPDATE_REQUEST: gapi.client.sheets.Request[] = [
-  // 1. Set Column Widths
+  // ============================================================================
+  // COLUMN WIDTHS
+  // ============================================================================
+
+  // Column A: CODBAR
   {
     updateDimensionProperties: {
       range: { sheetId: 0, dimension: 'COLUMNS', startIndex: 0, endIndex: 1 },
-      properties: { pixelSize: 300 }, // Column A
+      properties: { pixelSize: 280 },
       fields: 'pixelSize',
     },
   },
+
+  // Column B: AMOUNT
   {
     updateDimensionProperties: {
       range: { sheetId: 0, dimension: 'COLUMNS', startIndex: 1, endIndex: 2 },
-      properties: { pixelSize: 249 }, // Column B
+      properties: { pixelSize: 86 },
       fields: 'pixelSize',
     },
   },
+
+  // Column C: SKU
   {
     updateDimensionProperties: {
       range: { sheetId: 0, dimension: 'COLUMNS', startIndex: 2, endIndex: 3 },
-      properties: { pixelSize: 86 }, // Column C
+      properties: { pixelSize: 160 },
       fields: 'pixelSize',
     },
   },
+
+  // Column D: DESC
   {
     updateDimensionProperties: {
       range: { sheetId: 0, dimension: 'COLUMNS', startIndex: 3, endIndex: 4 },
-      properties: { pixelSize: 216 }, // Column D
+      properties: { pixelSize: 275 },
       fields: 'pixelSize',
     },
   },
-  // 2. Set Row Heights
+
+  // Column E: NOTAS
   {
-    // Row 1 (Header)
+    updateDimensionProperties: {
+      range: { sheetId: 0, dimension: 'COLUMNS', startIndex: 4, endIndex: 5 },
+      properties: { pixelSize: 200 },
+      fields: 'pixelSize',
+    },
+  },
+
+  // ============================================================================
+  // ROW HEIGHTS
+  // ============================================================================
+
+  // Header row (48px)
+  {
     updateDimensionProperties: {
       range: { sheetId: 0, dimension: 'ROWS', startIndex: 0, endIndex: 1 },
       properties: { pixelSize: 48 },
       fields: 'pixelSize',
     },
   },
+
+  // Data rows (47px each)
   {
-    // Rows 2-23
     updateDimensionProperties: {
-      range: { sheetId: 0, dimension: 'ROWS', startIndex: 1, endIndex: 23 },
+      range: { sheetId: 0, dimension: 'ROWS', startIndex: 1, endIndex: 1000 },
       properties: { pixelSize: 47 },
       fields: 'pixelSize',
     },
   },
-  // 3. Set Cell Borders for A1:D23
-  {
-    updateBorders: {
-      range: {
-        sheetId: 0,
-        startRowIndex: 0,
-        endRowIndex: 23, // Limit to row 23
-        startColumnIndex: 0,
-        endColumnIndex: 4, // Columns A-D
-      },
-      top: {
-        style: 'SOLID',
-        width: 1,
-        color: { red: 0.6, green: 0.6, blue: 0.6 },
-      },
-      bottom: {
-        style: 'SOLID',
-        width: 1,
-        color: { red: 0.6, green: 0.6, blue: 0.6 },
-      },
-      left: {
-        style: 'SOLID',
-        width: 1,
-        color: { red: 0.6, green: 0.6, blue: 0.6 },
-      },
-      right: {
-        style: 'SOLID',
-        width: 1,
-        color: { red: 0.6, green: 0.6, blue: 0.6 },
-      },
-      innerHorizontal: {
-        style: 'SOLID',
-        width: 1,
-        color: { red: 0.6, green: 0.6, blue: 0.6 },
-      },
-      innerVertical: {
-        style: 'SOLID',
-        width: 1,
-        color: { red: 0.6, green: 0.6, blue: 0.6 },
-      },
-    },
-  },
-  // 4. Format and Set Header Row (Row 1: A1:D1)
+
+  // ============================================================================
+  // HEADER ROW CONTENT & FORMATTING
+  // ============================================================================
+
   {
     updateCells: {
+      start: { sheetId: 0, rowIndex: 0, columnIndex: 0 },
       rows: [
         {
           values: [
+            // A1: CODBAR
             {
-              // A1: CODBAR
               userEnteredValue: { stringValue: 'CODBAR' },
               userEnteredFormat: {
                 horizontalAlignment: 'CENTER',
@@ -159,8 +146,30 @@ export const BATCH_UPDATE_REQUEST: gapi.client.sheets.Request[] = [
                 },
               },
             },
+
+            // B1: # (AMOUNT)
             {
-              // B1: DESC
+              userEnteredValue: { stringValue: '#' },
+              userEnteredFormat: {
+                horizontalAlignment: 'CENTER',
+                verticalAlignment: 'MIDDLE',
+                textFormat: { fontFamily: 'Arial', fontSize: 24 },
+              },
+            },
+
+            // C1: SKU
+            {
+              userEnteredValue: { stringValue: 'SKU' },
+              userEnteredFormat: {
+                horizontalAlignment: 'CENTER',
+                verticalAlignment: 'MIDDLE',
+                textFormat: { fontFamily: 'Arial', fontSize: 24 },
+                wrapStrategy: 'WRAP',
+              },
+            },
+
+            // D1: DESC
+            {
               userEnteredValue: { stringValue: 'DESC' },
               userEnteredFormat: {
                 horizontalAlignment: 'CENTER',
@@ -169,17 +178,9 @@ export const BATCH_UPDATE_REQUEST: gapi.client.sheets.Request[] = [
                 wrapStrategy: 'WRAP',
               },
             },
+
+            // E1: NOTAS
             {
-              // C1: #
-              userEnteredValue: { stringValue: '#' },
-              userEnteredFormat: {
-                horizontalAlignment: 'CENTER',
-                verticalAlignment: 'MIDDLE',
-                textFormat: { fontFamily: 'Arial', fontSize: 24 },
-              },
-            },
-            {
-              // D1: NOTAS
               userEnteredValue: { stringValue: 'NOTAS' },
               userEnteredFormat: {
                 horizontalAlignment: 'CENTER',
@@ -193,19 +194,22 @@ export const BATCH_UPDATE_REQUEST: gapi.client.sheets.Request[] = [
       ],
       fields:
         'userEnteredValue,userEnteredFormat(horizontalAlignment,verticalAlignment,textFormat,wrapStrategy)',
-      start: { sheetId: 0, rowIndex: 0, columnIndex: 0 },
     },
   },
-  // 5. Format Data Columns (Rows 2-23)
+
+  // ============================================================================
+  // DATA COLUMN FORMATTING (Rows 2-1000)
+  // ============================================================================
+
+  // Column A: CODBAR (Barcode font, 26px)
   {
-    // Column A (Barcode font)
     repeatCell: {
       range: {
         sheetId: 0,
-        startRowIndex: 1, // Row 2
-        endRowIndex: 23, // Limit to row 23
+        startRowIndex: 1,
+        endRowIndex: 1000,
         startColumnIndex: 0,
-        endColumnIndex: 1, // Column A
+        endColumnIndex: 1,
       },
       cell: {
         userEnteredFormat: {
@@ -218,15 +222,38 @@ export const BATCH_UPDATE_REQUEST: gapi.client.sheets.Request[] = [
         'userEnteredFormat(horizontalAlignment,verticalAlignment,textFormat)',
     },
   },
+
+  // Column B: AMOUNT (Arial, 22px)
   {
-    // Column B (Desc)
     repeatCell: {
       range: {
         sheetId: 0,
-        startRowIndex: 1, // Row 2
-        endRowIndex: 23, // Limit to row 23
+        startRowIndex: 1,
+        endRowIndex: 1000,
         startColumnIndex: 1,
-        endColumnIndex: 2, // Column B
+        endColumnIndex: 2,
+      },
+      cell: {
+        userEnteredFormat: {
+          horizontalAlignment: 'CENTER',
+          verticalAlignment: 'MIDDLE',
+          textFormat: { fontFamily: 'Arial', fontSize: 22 },
+        },
+      },
+      fields:
+        'userEnteredFormat(horizontalAlignment,verticalAlignment,textFormat)',
+    },
+  },
+
+  // Column C: SKU (Arial, 10px, wrapped)
+  {
+    repeatCell: {
+      range: {
+        sheetId: 0,
+        startRowIndex: 1,
+        endRowIndex: 1000,
+        startColumnIndex: 2,
+        endColumnIndex: 3,
       },
       cell: {
         userEnteredFormat: {
@@ -240,42 +267,22 @@ export const BATCH_UPDATE_REQUEST: gapi.client.sheets.Request[] = [
         'userEnteredFormat(horizontalAlignment,verticalAlignment,textFormat,wrapStrategy)',
     },
   },
+
+  // Column D: DESC (Arial, 10px, wrapped)
   {
-    // Column C (#)
     repeatCell: {
       range: {
         sheetId: 0,
-        startRowIndex: 1, // Row 2
-        endRowIndex: 23, // Limit to row 23
-        startColumnIndex: 2,
-        endColumnIndex: 3, // Column C
-      },
-      cell: {
-        userEnteredFormat: {
-          horizontalAlignment: 'CENTER',
-          verticalAlignment: 'MIDDLE',
-          textFormat: { fontFamily: 'Arial', fontSize: 22 },
-        },
-      },
-      fields:
-        'userEnteredFormat(horizontalAlignment,verticalAlignment,textFormat)',
-    },
-  },
-  {
-    // Column D (Notas)
-    repeatCell: {
-      range: {
-        sheetId: 0,
-        startRowIndex: 1, // Row 2
-        endRowIndex: 23, // Limit to row 23
+        startRowIndex: 1,
+        endRowIndex: 1000,
         startColumnIndex: 3,
-        endColumnIndex: 4, // Column D
+        endColumnIndex: 4,
       },
       cell: {
         userEnteredFormat: {
           horizontalAlignment: 'CENTER',
           verticalAlignment: 'MIDDLE',
-          textFormat: { fontFamily: 'Arial', fontSize: 9 },
+          textFormat: { fontFamily: 'Arial', fontSize: 10 },
           wrapStrategy: 'WRAP',
         },
       },
@@ -283,7 +290,35 @@ export const BATCH_UPDATE_REQUEST: gapi.client.sheets.Request[] = [
         'userEnteredFormat(horizontalAlignment,verticalAlignment,textFormat,wrapStrategy)',
     },
   },
-  // 6. Freeze Header Row
+
+  // Column E: NOTAS (Arial, 10px, left-aligned, wrapped)
+  {
+    repeatCell: {
+      range: {
+        sheetId: 0,
+        startRowIndex: 1,
+        endRowIndex: 1000,
+        startColumnIndex: 4,
+        endColumnIndex: 5,
+      },
+      cell: {
+        userEnteredFormat: {
+          horizontalAlignment: 'LEFT',
+          verticalAlignment: 'MIDDLE',
+          textFormat: { fontFamily: 'Arial', fontSize: 10 },
+          wrapStrategy: 'WRAP',
+        },
+      },
+      fields:
+        'userEnteredFormat(horizontalAlignment,verticalAlignment,textFormat,wrapStrategy)',
+    },
+  },
+
+  // ============================================================================
+  // SHEET PROPERTIES
+  // ============================================================================
+
+  // Freeze header row
   {
     updateSheetProperties: {
       properties: { sheetId: 0, gridProperties: { frozenRowCount: 1 } },
