@@ -88,6 +88,7 @@ function App() {
       });
     };
     loadGapiClient();
+    setTemporaryError('thing', 9999999);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   /**
@@ -299,6 +300,20 @@ function App() {
     }
   };
 
+  const copyJsonToClipboard = async () => {
+    if (!resultJson) {
+      setTemporaryError({ key: 'messages.errorNoJsonToCopy' });
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(resultJson);
+      onResultCopied();
+    } catch (err) {
+      console.error('Failed to copy JSON to clipboard:', err);
+      setTemporaryError({ key: 'messages.errorCopyJsonFailed' });
+    }
+  };
+
   const generateButton = () => {
     if (!isGapiClientReady) {
       return (
@@ -396,9 +411,50 @@ function App() {
           </div>
         )}
 
-        {thoughts || resultJson || true ? (
+        {resultLink && (
+          <div
+            className={`alert alert-success d-flex gap-2 flex-column flex-sm-row align-items-center justify-content-center ${styles.alertSuccess}`}
+            role="alert"
+          >
+            <i className="bi bi-check-circle-fill me-2"></i>
+            <div>
+              <strong>{t('messages.processingComplete')}</strong>{' '}
+              {t('messages.dataProcessed')}
+            </div>
+            <button
+              type="button"
+              className="btn btn-outline-success btn-sm"
+              onClick={copyJsonToClipboard}
+              title={t('messages.copyJsonTooltip')}
+            >
+              <i
+                className={`bi ${resultCopied ? 'bi-check-lg' : 'bi-clipboard-check'} me-1`}
+              ></i>
+              {t('messages.copyJson')}
+            </button>
+            <a
+              href={resultLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn btn-success btn-sm"
+              title={t('messages.openSpreadsheetTooltip')}
+            >
+              <i className="bi bi-box-arrow-up-right me-1"></i>
+              {t('messages.openSpreadsheet')}
+            </a>
+            <button
+              type="button"
+              className="btn btn-warning btn-sm"
+              onClick={clearResult}
+            >
+              <i className={`bi bi-x-circle`}></i>
+            </button>
+          </div>
+        )}
+
+        {isAwaitingResponse ? (
           <Result
-            thoughts={"swawy"}
+            thoughts={thoughts}
             resultJson={resultJson}
             resultLink={resultLink}
             resultCopied={resultCopied}

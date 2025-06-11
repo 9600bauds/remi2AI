@@ -1,23 +1,148 @@
-.alertSuccess {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
 .resultContainer {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
+  gap: 12px;
+  width: min(90vw, 800px); /* Responsive width with max limit */
+  max-width: 100%;
+  margin: 16px 0;
+}
 
-  width: 80%;
+.robotIcon {
+  flex-shrink: 0; /* Prevent icon from shrinking */
+  margin-top: 4px; /* Slight offset to align with speech bubble */
+}
 
+.speechBubble {
+  display: flex;
+  position: relative;
+  flex-grow: 1;
+  min-height: min(30vh, 300px); /* Responsive height with fallback */
+  max-height: min(50vh, 500px); /* Max height to prevent overwhelming */
+  padding: 16px;
+  background-color: white;
+  border: 2px solid #0d6efd; /* More visible border using Bootstrap primary */
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Speech bubble tail pointing to the robot */
+.speechBubble::before {
+  content: '';
+  position: absolute;
+  left: -12px;
+  top: 20px;
+  width: 0;
+  height: 0;
   border-style: solid;
-  border-width: var(--bs-card-border-width, var(--bs-border-width-2));
-  border-color: var(--bs-card-border-color, var(--bs-border-color));
-  border-radius: var(--bs-card-border-radius, var(--bs-border-radius));
-  box-shadow: var(--bs-box-shadow-sm);
+  border-width: 12px 12px 12px 0;
+  border-color: transparent #0d6efd transparent transparent;
+}
+
+/* Inner triangle for the speech bubble effect */
+.speechBubble::after {
+  content: '';
+  position: absolute;
+  left: -9px;
+  top: 21px;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 11px 11px 11px 0;
+  border-color: transparent white transparent transparent;
+}
+
+.bubbleHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.bubbleTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: #0d6efd;
+  margin: 0;
 }
 
 .thoughtTextArea {
-  flex-grow: 1;
-  height: 200px;
+  height: calc(100% - 40px); /* Fill remaining space minus header */
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 0;
+  background-color: transparent;
+  border: none;
+  font-family:
+    'Segoe UI',
+    system-ui,
+    -apple-system,
+    sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  color: #333;
+}
+
+/* Custom scrollbar styling */
+.thoughtTextArea::-webkit-scrollbar {
+  width: 8px;
+}
+
+.thoughtTextArea::-webkit-scrollbar-track {
+  background: #f8f9fa;
+  border-radius: 4px;
+}
+
+.thoughtTextArea::-webkit-scrollbar-thumb {
+  background: #0d6efd;
+  border-radius: 4px;
+  opacity: 0.7;
+}
+
+.thoughtTextArea::-webkit-scrollbar-thumb:hover {
+  background: #0b5ed7;
+  opacity: 1;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .resultContainer {
+    width: 95vw;
+    gap: 8px;
+  }
+
+  .speechBubble {
+    min-height: min(25vh, 200px);
+    max-height: min(40vh, 400px);
+    padding: 12px;
+  }
+
+  .speechBubble::before {
+    left: -10px;
+    border-width: 10px 10px 10px 0;
+  }
+
+  .speechBubble::after {
+    left: -8px;
+    top: 22px;
+    border-width: 9px 9px 9px 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .resultContainer {
+    width: 98vw;
+  }
+
+  .speechBubble {
+    min-height: min(20vh, 180px);
+    padding: 10px;
+  }
+
+  .thoughtTextArea {
+    font-size: 13px;
+  }
 }
