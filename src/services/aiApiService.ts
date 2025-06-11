@@ -71,18 +71,12 @@ export const sendAiRequest = async (
           if (part.text) {
             if (part.thought === true) {
               const thoughtFragment = part.text;
-              thoughtFragments = [
-                ...thoughtFragments,
-                thoughtFragment
-              ]
+              thoughtFragments = [...thoughtFragments, thoughtFragment];
             } else {
               const jsonFragment = part.text.trim();
-              jsonFragments = [
-                ...jsonFragments,
-                jsonFragment
-              ]
+              jsonFragments = [...jsonFragments, jsonFragment];
             }
-            onPartReceived(thoughtFragments, jsonFragments)
+            onPartReceived(thoughtFragments, jsonFragments);
           }
         }
       }

@@ -42,7 +42,7 @@ function App() {
 
   const [thinkingParts, setThinkingParts] = useState<string[]>([]);
   const [outputParts, setOutputParts] = useState<string[]>([]);
-  
+
   const dropZoneRef = useRef<DropZoneHandles>(null); // Ref for DropZone
 
   /**
@@ -208,14 +208,17 @@ function App() {
     }
   };
 
-  const onPartReceived = (newThinkingParts: string[], newOutputParts: string[]) => {
+  const onPartReceived = (
+    newThinkingParts: string[],
+    newOutputParts: string[]
+  ) => {
     setThinkingParts(newThinkingParts);
     setOutputParts(newOutputParts);
   };
   const clearParts = () => {
     setThinkingParts([]);
     setOutputParts([]);
-  }
+  };
 
   const onResultCopied = () => {
     setResultCopied(true);
@@ -304,6 +307,7 @@ function App() {
       setTemporaryError(processedError);
     } finally {
       setIsAwaitingResponse(false);
+      clearParts();
     }
   };
 

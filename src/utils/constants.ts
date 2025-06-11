@@ -117,7 +117,7 @@ export const BATCH_UPDATE_REQUEST: gapi.client.sheets.Request[] = [
   // Data rows (47px each)
   {
     updateDimensionProperties: {
-      range: { sheetId: 0, dimension: 'ROWS', startIndex: 1, endIndex: 1000 },
+      range: { sheetId: 0, dimension: 'ROWS', startIndex: 1, endIndex: 50 },
       properties: { pixelSize: 47 },
       fields: 'pixelSize',
     },
@@ -198,7 +198,7 @@ export const BATCH_UPDATE_REQUEST: gapi.client.sheets.Request[] = [
   },
 
   // ============================================================================
-  // DATA COLUMN FORMATTING (Rows 2-1000)
+  // DATA COLUMN FORMATTING (Rows 2-50)
   // ============================================================================
 
   // Column A: CODBAR (Barcode font, 26px)
@@ -207,7 +207,7 @@ export const BATCH_UPDATE_REQUEST: gapi.client.sheets.Request[] = [
       range: {
         sheetId: 0,
         startRowIndex: 1,
-        endRowIndex: 1000,
+        endRowIndex: 50,
         startColumnIndex: 0,
         endColumnIndex: 1,
       },
@@ -229,7 +229,7 @@ export const BATCH_UPDATE_REQUEST: gapi.client.sheets.Request[] = [
       range: {
         sheetId: 0,
         startRowIndex: 1,
-        endRowIndex: 1000,
+        endRowIndex: 50,
         startColumnIndex: 1,
         endColumnIndex: 2,
       },
@@ -251,7 +251,7 @@ export const BATCH_UPDATE_REQUEST: gapi.client.sheets.Request[] = [
       range: {
         sheetId: 0,
         startRowIndex: 1,
-        endRowIndex: 1000,
+        endRowIndex: 50,
         startColumnIndex: 2,
         endColumnIndex: 3,
       },
@@ -274,7 +274,7 @@ export const BATCH_UPDATE_REQUEST: gapi.client.sheets.Request[] = [
       range: {
         sheetId: 0,
         startRowIndex: 1,
-        endRowIndex: 1000,
+        endRowIndex: 50,
         startColumnIndex: 3,
         endColumnIndex: 4,
       },
@@ -297,7 +297,7 @@ export const BATCH_UPDATE_REQUEST: gapi.client.sheets.Request[] = [
       range: {
         sheetId: 0,
         startRowIndex: 1,
-        endRowIndex: 1000,
+        endRowIndex: 50,
         startColumnIndex: 4,
         endColumnIndex: 5,
       },
