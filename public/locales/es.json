@@ -84,8 +84,10 @@
     "errorCopyJsonFailed": "Error al copiar los datos JSON al portapapeles.",
     "copyJsonTooltip": "Copiar la salida JSON cruda de la IA a su portapapeles.",
     "openSpreadsheetTooltip": "Abrir la Hoja de Cálculo de Google recién creada en una nueva pestaña.",
+    "clearResultTooltip": "Cerrar el resultado.",
     "awaitingThinkingTokens": "Pensando...",
-    "creatingOutput": "Procesando datos..."
+    "creatingOutput": "Procesando datos...",
+    "creatingSheet": "Creando planilla..."
   },
   "settingsModal": {
     "title": "Configuración de la Aplicación",

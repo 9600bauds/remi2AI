@@ -5,11 +5,15 @@ import styles from './ThoughtsPreview.module.css';
 interface ThoughtsPreviewProps {
   thinkingParts: string[];
   outputParts: string[];
+  isAwaitingAIResponse: boolean;
+  isAwaitingGapiResponse: boolean;
 }
 
 const ThoughtsPreview: React.FC<ThoughtsPreviewProps> = ({
   thinkingParts,
   outputParts,
+  isAwaitingAIResponse,
+  isAwaitingGapiResponse,
 }) => {
   const { t } = useTranslation();
 
@@ -18,12 +22,27 @@ const ThoughtsPreview: React.FC<ThoughtsPreviewProps> = ({
   let extraClassName = '';
   if (outputParts.length) {
     text = outputParts.join('');
-    title = t('messages.creatingOutput');
     extraClassName = styles.json;
+    if (isAwaitingAIResponse) {
+      title = t('messages.creatingOutput');
+    } else if (isAwaitingGapiResponse) {
+      title = t('messages.creatingSheet');
+    }
   } else if (thinkingParts.length) {
     const lastThought = thinkingParts[thinkingParts.length - 1];
-    const withoutEmptyLines = lastThought.replace(/(^[ \t]*\n)/gm, '');
-    text = withoutEmptyLines;
+
+    const lines = lastThought.split('\n').filter((line) => line.trim() !== '');
+    if (lines.length > 0) {
+      const firstLine = lines[0].trim();
+      const firstLineIsTitle =
+        firstLine.startsWith('**') && firstLine.endsWith('**');
+      if (firstLineIsTitle) {
+        title = firstLine.replace(/\*\*/gm, ''); /* Remove the title markdown */
+        text = lines.slice(1).join('\n');
+      } else {
+        text = lines.join('\n');
+      }
+    }
   } else {
     title = t('messages.awaitingThinkingTokens');
   }
@@ -40,7 +59,11 @@ const ThoughtsPreview: React.FC<ThoughtsPreviewProps> = ({
           aria-hidden="true"
         />
         <div id={styles.bubbleContentWrapper}>
-          {title && <h6 id={styles.bubbleTitle}>{title}</h6>}
+          {title && (
+            <h6 id={styles.bubbleTitle}>
+              <ReactMarkdown>{title}</ReactMarkdown>
+            </h6>
+          )}
           {title && text && <hr className="mt-0 mb-1" />}
           {text && (
             <div id={styles.bubbleText} className={extraClassName}>

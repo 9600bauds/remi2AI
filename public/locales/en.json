@@ -84,8 +84,10 @@
     "errorCopyJsonFailed": "Failed to copy JSON data to clipboard.",
     "copyJsonTooltip": "Copy the raw JSON output from the AI to your clipboard.",
     "openSpreadsheetTooltip": "Open the newly created Google Sheet in a new tab.",
+    "clearResultTooltip": "Close result.",
     "awaitingThinkingTokens": "Thinking...",
-    "creatingOutput": "Processing data..."
+    "creatingOutput": "Processing data...",
+    "creatingSheet": "Creating spreadsheet..."
   },
   "settingsModal": {
     "title": "Application Settings",

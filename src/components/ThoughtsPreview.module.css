@@ -2,7 +2,7 @@
   display: flex;
   align-items: center;
   gap: 14px; /* Hardcoded speech bubble size */
-  height: clamp(2em, 30vh, 10em);
+  height: clamp(2em, 30vh, 8em);
   width: min(90vw, 800px); /* Responsive width with max limit */
   max-width: 100%;
 }
@@ -63,7 +63,7 @@
     system-ui,
     -apple-system,
     sans-serif;
-  line-height: 1.5;
+  line-height: 1;
   white-space: pre-wrap;
   word-wrap: break-word;
 }
@@ -74,6 +74,11 @@
   font-weight: bold;
   color: #0d6efd;
   margin: 0;
+}
+
+#bubbleTitle p {
+  /* React Markup creates a <p> element inside */
+  margin: 0 !important;
 }
 
 #bubbleText {

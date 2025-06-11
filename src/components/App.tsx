@@ -32,14 +32,19 @@ function App() {
   const [isGoogleSignedIn, setIsGoogleSignedIn] = useState<boolean>(false);
 
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const [isAwaitingResponse, setIsAwaitingResponse] = useState<boolean>(false);
+
+  const [error, setError] = useState<LocalizedError>(null);
+  const [errorTimeout, setErrorTimeout] = useState<NodeJS.Timeout | null>(null);
+
   const [highlightButton, setHighlightButton] = useState<boolean>(false);
   const [resultLink, setresultLink] = useState<string | null>(null);
   const [resultJson, setresultJson] = useState<string | null>(null);
   const [resultCopied, setResultCopied] = useState<boolean>(false);
-  const [error, setError] = useState<LocalizedError>(null);
-  const [errorTimeout, setErrorTimeout] = useState<NodeJS.Timeout | null>(null);
 
+  const [isAwaitingAIResponse, setIsAwaitingAIResponse] =
+    useState<boolean>(false);
+  const [isAwaitingGapiResponse, setIsAwaitingGapiResponse] =
+    useState<boolean>(false);
   const [thinkingParts, setThinkingParts] = useState<string[]>([]);
   const [outputParts, setOutputParts] = useState<string[]>([]);
 
@@ -240,7 +245,6 @@ function App() {
       return;
     }
 
-    setIsAwaitingResponse(true);
     setError(null);
     setresultLink(null);
     setresultJson(null);
@@ -249,9 +253,7 @@ function App() {
     clearParts();
 
     try {
-      const newFilename = t('fileUpload.defaultCopyName', {
-        dateTime: new Date().toLocaleString(),
-      });
+      setIsAwaitingAIResponse(true);
       const rawJsonResult = await sendAiRequest(
         API_KEY,
         AI_MODEL,
@@ -260,16 +262,20 @@ function App() {
         AI_SCHEMA,
         onPartReceived
       );
+      setIsAwaitingAIResponse(false);
 
       const arrayResult = jsonResponseTo2DArray(rawJsonResult, AI_SCHEMA);
 
+      const newFilename = t('fileUpload.defaultCopyName', {
+        dateTime: new Date().toLocaleString(),
+      });
+      setIsAwaitingGapiResponse(true);
       const newSheet = await createNewSheetFromTemplate(
         newFilename,
         BATCH_UPDATE_REQUEST
       );
       if (!newSheet || !newSheet.spreadsheetId) {
         // Error handled by createNewSheetFromTemplate throwing new Error('messages.errorCreatingSpreadsheet')
-        setIsAwaitingResponse(false);
         return;
       }
 
@@ -278,6 +284,7 @@ function App() {
         arrayResult,
         SHEETS_RANGE
       );
+      setIsAwaitingGapiResponse(false);
       if (newSheet.spreadsheetUrl) {
         setresultLink(newSheet.spreadsheetUrl);
         setresultJson(rawJsonResult);
@@ -305,8 +312,10 @@ function App() {
         processedError = 'messages.errorUnknown';
       }
       setTemporaryError(processedError);
+      setIsAwaitingAIResponse(false);
+      setIsAwaitingGapiResponse(false);
     } finally {
-      setIsAwaitingResponse(false);
+      setIsAwaitingAIResponse(false);
       clearParts();
     }
   };
@@ -455,18 +464,21 @@ function App() {
             </a>
             <button
               type="button"
-              className="btn btn-warning btn-sm"
+              className="btn btn-danger btn-sm"
               onClick={clearResult}
+              title={t('messages.clearResultTooltip')}
             >
               <i className={`bi bi-x-circle`}></i>
             </button>
           </div>
         )}
 
-        {isAwaitingResponse ? (
+        {isAwaitingAIResponse || isAwaitingGapiResponse ? (
           <ThoughtsPreview
             thinkingParts={thinkingParts}
             outputParts={outputParts}
+            isAwaitingAIResponse={isAwaitingAIResponse}
+            isAwaitingGapiResponse={isAwaitingGapiResponse}
           />
         ) : (
           <div className={styles.actionButtonWrapper}>{generateButton()}</div>
