@@ -14,7 +14,7 @@
   flex-shrink: 1;
   min-height: 0; /* Allows mainContentArea to shrink if its parent (.appContainer) constrains it */
   display: flex;
-  gap: 0.5em;
+  gap: clamp(0.1rem, 2.5vh, 0.5rem);
   flex-direction: column;
   justify-content: center;
   align-items: center;
@@ -31,11 +31,6 @@
   align-items: center;
 }
 
-.actionPanelWrapper > :global(.alert) {
-  width: 100%;
-  margin-bottom: 1rem;
-}
-
 .errorContainer {
   display: flex;
   align-items: center;
@@ -43,7 +38,7 @@
 }
 
 .actionButtonWrapper {
-  padding-top: 0.5rem;
+  padding-top: clamp(0.1rem, 2.5vh, 0.5rem);
 }
 
 .alertSuccess {

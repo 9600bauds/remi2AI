@@ -18,6 +18,7 @@ export const AI_MODEL: string = 'gemini-2.5-flash-preview-05-20';
 export const AI_PROMPT: string = `You are an expert at data entry, digitizing a scanned invoice provided by the user.
 Your task is to identify and list all the items presented in the scanned invoice.
 Analyze the provided images, gather the text that appears on the invoice, and then identify each item.
+If multiple images are provided, assume they are different pages of just one multi-page invoice.
 The layout of the invoice usually follows a table-like structure, though it may not always be intuitive.
 Look at all the columns, their titles, and their contents, and try to deduce which one corresponds to each property in the output schema.
 Some of the text may be hard to read (obscured by stamps or writing), pay careful attention.

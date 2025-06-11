@@ -84,6 +84,7 @@
 #bubbleText {
   flex-grow: 1;
   overflow-y: auto; /* Create a scrollbar */
+  overflow-x: hidden;
 }
 
 #bubbleText p {
