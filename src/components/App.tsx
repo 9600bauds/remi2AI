@@ -35,8 +35,10 @@ function App() {
 
   const [error, setError] = useState<LocalizedError>(null);
   const [errorTimeout, setErrorTimeout] = useState<NodeJS.Timeout | null>(null);
+  const tokenExpiryTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const [highlightButton, setHighlightButton] = useState<boolean>(false);
+  const [highlightButton, setHighlightButton] =
+    useState<boolean>(false); /* If true, the submit button should glow */
   const [resultLink, setresultLink] = useState<string | null>(null);
   const [resultJson, setresultJson] = useState<string | null>(null);
   const [resultCopied, setResultCopied] = useState<boolean>(false);
@@ -113,7 +115,7 @@ function App() {
         const tokenIsValid =
           storedTokenData.token && storedTokenData.expires_at > Date.now();
         if (tokenIsValid) {
-          onSignIn(storedTokenData.token);
+          onSignIn(storedTokenData.token, storedTokenData.expires_at);
         } else {
           localStorage.removeItem(LOCALSTORAGE_TOKEN_KEY);
         }
@@ -125,17 +127,51 @@ function App() {
   }, [isGapiClientReady]); // eslint-disable-line react-hooks/exhaustive-deps
 
   /**
+   * Cleanup useEffect for the timeout when the component unmounts (shouldn't really be needed but, it's good practice)
+   */
+  useEffect(() => {
+    return () => {
+      if (tokenExpiryTimeoutRef.current) {
+        clearTimeout(tokenExpiryTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  /**
+   * Schedules an automatic sign-out when the Google token expires.
+   */
+  const scheduleTokenExpiry = (expiresAt: number) => {
+    console.log('Token expires at', expiresAt, 'now is', Date.now());
+    // Clear any existing timeout before setting a new one
+    if (tokenExpiryTimeoutRef.current) {
+      clearTimeout(tokenExpiryTimeoutRef.current);
+    }
+
+    const delay = expiresAt - Date.now();
+    tokenExpiryTimeoutRef.current = setTimeout(() => {
+      console.log('Session expired, automatically signing out.');
+      googleSignOut();
+      setTemporaryError('messages.errorSessionExpired');
+    }, delay);
+  };
+
+  /**
    * Google authentication login/log out
    */
-  const onSignIn = (token: string) => {
+  const onSignIn = (token: string, expiresAt: number) => {
     gapi.client.setToken({ access_token: token });
     setIsGoogleSignedIn(true);
     setError(null);
     if (selectedFiles.length > 0) {
       setHighlightButton(true);
     }
+    scheduleTokenExpiry(expiresAt);
   };
   const onSignOut = () => {
+    if (tokenExpiryTimeoutRef.current) {
+      clearTimeout(tokenExpiryTimeoutRef.current);
+      tokenExpiryTimeoutRef.current = null;
+    }
     gapi.client.setToken(null);
     setIsGoogleSignedIn(false);
     localStorage.removeItem(LOCALSTORAGE_TOKEN_KEY);
@@ -144,10 +180,12 @@ function App() {
 
   const googleSignIn = useGoogleLogin({
     onSuccess: (tokenResponse) => {
-      onSignIn(tokenResponse.access_token);
+      const expiresAt = Date.now() + tokenResponse.expires_in * 1000; // expires_in is in seconds
+      onSignIn(tokenResponse.access_token, expiresAt);
+
       const tokenToStore: StoredToken = {
         token: tokenResponse.access_token,
-        expires_at: Date.now() + tokenResponse.expires_in * 1000, // expires_in is in seconds
+        expires_at: expiresAt,
       };
       localStorage.setItem(
         LOCALSTORAGE_TOKEN_KEY,
@@ -191,6 +229,10 @@ function App() {
     onSignOut();
     setError(null); // Clear errors on sign out
   };
+
+  /**
+   * End of sign in / sign out stuff
+   */
 
   const changeLanguage = async (lng: SupportedLanguage) => {
     await i18n.changeLanguage(lng);
@@ -312,10 +354,9 @@ function App() {
         processedError = 'messages.errorUnknown';
       }
       setTemporaryError(processedError);
-      setIsAwaitingAIResponse(false);
-      setIsAwaitingGapiResponse(false);
     } finally {
       setIsAwaitingAIResponse(false);
+      setIsAwaitingGapiResponse(false);
       clearParts();
     }
   };

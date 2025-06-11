@@ -53,6 +53,7 @@
     "errorGoogleLogin": "Google Login Error: {{message}}",
     "errorGoogleLoginUnknown": "Google login failed for an unknown reason.",
     "errorGoogleLoginWithMessage": "Google Login Error: {{message}}",
+    "errorSessionExpired": "Your Google session has expired. Please log in again.",
     "errorLoginDefaultDetail": "An authentication issue occurred.",
     "errorSignInRequired": "Please sign in to continue.",
     "errorProcessingGeneric": "An error occurred during processing: {{message}}",

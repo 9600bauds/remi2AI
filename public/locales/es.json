@@ -53,6 +53,7 @@
     "errorGoogleLogin": "Error de Inicio de Sesión con Google: {{message}}",
     "errorGoogleLoginUnknown": "El inicio de sesión con Google falló por una razón desconocida.",
     "errorGoogleLoginWithMessage": "Error de Inicio de Sesión con Google: {{message}}",
+    "errorSessionExpired": "Se venció su sesion de Google. Por favor, inicie sesión nuevamente.",
     "errorLoginDefaultDetail": "Ocurrió un problema de autenticación.",
     "errorSignInRequired": "Por favor inicie sesión para continuar.",
     "errorProcessingGeneric": "Ocurrió un error durante el procesamiento: {{message}}",
