@@ -141,7 +141,6 @@ function App() {
    * Schedules an automatic sign-out when the Google token expires.
    */
   const scheduleTokenExpiry = (expiresAt: number) => {
-    console.log('Token expires at', expiresAt, 'now is', Date.now());
     // Clear any existing timeout before setting a new one
     if (tokenExpiryTimeoutRef.current) {
       clearTimeout(tokenExpiryTimeoutRef.current);
@@ -149,7 +148,6 @@ function App() {
 
     const delay = expiresAt - Date.now();
     tokenExpiryTimeoutRef.current = setTimeout(() => {
-      console.log('Session expired, automatically signing out.');
       googleSignOut();
       setTemporaryError('messages.errorSessionExpired');
     }, delay);

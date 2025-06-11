@@ -38,7 +38,7 @@ export const AI_SCHEMA: Schema = {
       SKU: {
         type: Type.STRING,
         description:
-          "The provider's internal code for this item, if it appears. It will usually appear in a column titled Código or Alias.",
+          "The provider's internal code for this item, if it appears. It will usually appear in a column titled Código or Alias. If there are multiple that seem suitable, include all of them, separated by a space.",
       },
       itemName: {
         type: Type.STRING,
