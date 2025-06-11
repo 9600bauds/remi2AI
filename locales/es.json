@@ -53,6 +53,7 @@
     "errorGoogleLogin": "Error de Inicio de Sesión con Google: {{message}}",
     "errorGoogleLoginUnknown": "El inicio de sesión con Google falló por una razón desconocida.",
     "errorGoogleLoginWithMessage": "Error de Inicio de Sesión con Google: {{message}}",
+    "errorSessionExpired": "Se venció su sesion de Google. Por favor, inicie sesión nuevamente.",
     "errorLoginDefaultDetail": "Ocurrió un problema de autenticación.",
     "errorSignInRequired": "Por favor inicie sesión para continuar.",
     "errorProcessingGeneric": "Ocurrió un error durante el procesamiento: {{message}}",
@@ -80,10 +81,14 @@
     "errorApplyingTemplateToSheet": "Error al aplicar el formato de plantilla a la nueva hoja: {{error}}",
     "jsonCopiedSuccess": "Copiado!",
     "errorNoJsonToCopy": "No hay datos JSON disponibles para copiar.",
-    "jsonCopiedToClipboard": "¡Datos JSON copiados al portapapeles!",
+    "jsonCopiedToClipboard": "Datos JSON copiados al portapapeles!",
     "errorCopyJsonFailed": "Error al copiar los datos JSON al portapapeles.",
     "copyJsonTooltip": "Copiar la salida JSON cruda de la IA a su portapapeles.",
-    "openSpreadsheetTooltip": "Abrir la Hoja de Cálculo de Google recién creada en una nueva pestaña."
+    "openSpreadsheetTooltip": "Abrir la Hoja de Cálculo de Google recién creada en una nueva pestaña.",
+    "clearResultTooltip": "Cerrar el resultado.",
+    "awaitingThinkingTokens": "Pensando...",
+    "creatingOutput": "Procesando datos...",
+    "creatingSheet": "Creando planilla..."
   },
   "settingsModal": {
     "title": "Configuración de la Aplicación",
