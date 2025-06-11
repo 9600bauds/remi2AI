@@ -132,16 +132,17 @@ npm install
     VITE_GOOGLE_API_KEY="YOUR_GOOGLE_CLOUD_PROJECT_API_KEY"
     ```
 
-    **To get these values:**  
-     1. Go to the [Google Cloud Console](https://console.cloud.google.com/).  
-     2. Create a new project or select an existing one.  
-     3. Create a new API key. Enable **Google Sheets API**, **Google Drive API** and **Generative Language API**. Restrict the API key to only be usable by these APIs.  
-     4. Copy this key and use it as the value for `VITE_GOOGLE_API_KEY`.  
-     5. Go to "Credentials" -> "Create Credentials" -> "OAuth client ID".  
-     6. Choose "Web application" as the application type.  
-     7. Under "Authorized JavaScript origins", add your development URL (e.g., `http://localhost:5173` - check your Vite dev server port) and your planned deployment URL.  
-     8. Under "Authorized redirect URIs", add the same URLs.  
-     9. Copy the generated **Client ID** and paste it as the value for `VITE_GOOGLE_CLIENT_ID`.
+    **To get these values:**
+
+    1.  Go to the [Google Cloud Console](https://console.cloud.google.com/).
+    2.  Create a new project or select an existing one.
+    3.  Create a new API key. Enable **Google Sheets API**, **Google Drive API** and **Generative Language API**. Restrict the API key to only be usable by these APIs.
+    4.  Copy this key and use it as the value for `VITE_GOOGLE_API_KEY`.
+    5.  Go to "Credentials" -> "Create Credentials" -> "OAuth client ID".
+    6.  Choose "Web application" as the application type.
+    7.  Under "Authorized JavaScript origins", add your development URL (e.g., `http://localhost:5173` - check your Vite dev server port) and your planned deployment URL.
+    8.  Under "Authorized redirect URIs", add the same URLs.
+    9.  Copy the generated **Client ID** and paste it as the value for `VITE_GOOGLE_CLIENT_ID`.
 
 ### 4. Start the Development Server
 

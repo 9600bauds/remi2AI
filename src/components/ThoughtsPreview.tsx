@@ -22,6 +22,12 @@ const ThoughtsPreview: React.FC<ThoughtsPreviewProps> = ({
   let extraClassName = '';
   if (outputParts.length) {
     text = outputParts.join('');
+    text = text
+      // eslint-disable-next-line no-useless-escape
+      .replace(/([\{\}\[\],:])\s+/g, '$1') // Remove whitespace after structural chars
+      // eslint-disable-next-line no-useless-escape
+      .replace(/\s+([\{\}\[\],:])/g, '$1') // Remove whitespace before structural chars
+      .trim();
     extraClassName = styles.json;
     if (isAwaitingAIResponse) {
       title = t('messages.creatingOutput');

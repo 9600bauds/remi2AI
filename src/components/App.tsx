@@ -3,7 +3,7 @@ import { useEffect, useState, useRef } from 'react';
 import styles from './App.module.css';
 import { useGoogleLogin, googleLogout } from '@react-oauth/google';
 import { useTranslation } from 'react-i18next';
-import { jsonResponseTo2DArray, sendAiRequest } from '../services/aiApiService';
+import { parseAIResponse, sendAiRequest } from '../services/aiApiService';
 import {
   AI_MODEL,
   AI_PROMPT,
@@ -13,7 +13,8 @@ import {
   DISCOVERY_DOCS,
   GAPI_SCOPE,
   LOCALSTORAGE_TOKEN_KEY,
-  SHEETS_RANGE,
+  SHEET_DATA_RANGE,
+  SHEET_TITLE_RANGE,
 } from '../utils/constants';
 import type { SupportedLanguage } from '../types/SupportedLanguage';
 import Header from './Header';
@@ -24,6 +25,7 @@ import {
   writeToSpreadsheet,
 } from '../services/googleSheetsService';
 import ThoughtsPreview from './ThoughtsPreview';
+import formatDateIntl from '../utils/formatDateIntl';
 
 function App() {
   const { t, i18n } = useTranslation();
@@ -304,11 +306,10 @@ function App() {
       );
       setIsAwaitingAIResponse(false);
 
-      const arrayResult = jsonResponseTo2DArray(rawJsonResult, AI_SCHEMA);
+      const { title, items } = parseAIResponse(rawJsonResult, AI_SCHEMA);
 
-      const newFilename = t('fileUpload.defaultCopyName', {
-        dateTime: new Date().toLocaleString(),
-      });
+      const newFilename =
+        title + ' - ' + formatDateIntl(new Date(), i18n.language);
       setIsAwaitingGapiResponse(true);
       const newSheet = await createNewSheetFromTemplate(
         newFilename,
@@ -321,8 +322,10 @@ function App() {
 
       await writeToSpreadsheet(
         newSheet.spreadsheetId,
-        arrayResult,
-        SHEETS_RANGE
+        items,
+        SHEET_DATA_RANGE,
+        title,
+        SHEET_TITLE_RANGE
       );
       setIsAwaitingGapiResponse(false);
       if (newSheet.spreadsheetUrl) {

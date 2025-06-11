@@ -5,7 +5,8 @@ export const LOCALSTORAGE_TOKEN_KEY = 'googleUserToken';
 export const MAX_FILES = 3;
 export const MAX_FILESIZE = 10 * 1024 * 1024; // 10MB;
 
-export const SHEETS_RANGE: string = 'Sheet1!B2';
+export const SHEET_DATA_RANGE: string = 'Sheet1!B2';
+export const SHEET_TITLE_RANGE: string = 'Sheet1!A1';
 export const DISCOVERY_DOCS = [
   'https://sheets.googleapis.com/$discovery/rest?version=v4',
   'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest',
@@ -26,30 +27,47 @@ Then, after identifying all the items, DOUBLE-CHECK to make sure you have not mi
 DOUBLE-CHECK also that you have not hallucinated any of the identified items - verify that the all truly exist in the images.
 When ready, provide a response according to the structured output.`;
 export const AI_SCHEMA: Schema = {
-  type: Type.ARRAY,
-  items: {
-    type: Type.OBJECT,
-    properties: {
-      amount: {
-        type: Type.NUMBER,
-        description:
-          "The amount for this item, exactly as it appears on the invoice. It will usually be whole numbers, do not confuse it with the price of the item (generally large and with many significant decimals) or the tax% (usually exactly 21% or 10.5%). It will usually be in a column titled 'Cant' (short for Cantidad), or 'U' (short for Unidades).",
-      },
-      SKU: {
-        type: Type.STRING,
-        description:
-          "The provider's internal code for this item, if it appears. It will usually appear in a column titled Código or Alias. If there are multiple that seem suitable, include all of them, separated by a space.",
-      },
-      itemName: {
-        type: Type.STRING,
-        description:
-          "Name of the item, exactly as it appears on the invoice. It may sometimes appear in a column titled 'Desc' (short for Descripción).",
+  type: Type.OBJECT,
+  properties: {
+    title: {
+      type: Type.STRING,
+      description:
+        "A concise title for the extracted invoice, particularly the provider or the invoice number, if found. Example: 'ElectroDos #12345-678910'",
+    },
+    items: {
+      type: Type.ARRAY,
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          amount: {
+            type: Type.NUMBER,
+            description:
+              "The amount for this item, exactly as it appears on the invoice. It will usually be whole numbers, do not confuse it with the price of the item (generally large and with many significant decimals) or the tax% (usually exactly 21% or 10.5%). It will usually be in a column titled 'Cant' (short for Cantidad), or 'U' (short for Unidades).",
+          },
+          SKU: {
+            type: Type.STRING,
+            description:
+              "The provider's internal code for this item, if it appears. It will usually appear in a column titled 'Código', 'Cod.', 'Cod. E1' or similar. If there are multiple columns that seem suitable, include all of them, separated by a space.",
+          },
+          itemName: {
+            type: Type.STRING,
+            description:
+              "Name of the item, exactly as it appears on the invoice. It may sometimes appear in a column titled 'Desc' (short for Descripción).",
+          },
+        },
+        required: ['amount', 'SKU', 'itemName'],
+        propertyOrdering: ['amount', 'SKU', 'itemName'],
       },
     },
-    required: ['amount', 'SKU', 'itemName'],
-    propertyOrdering: ['amount', 'SKU', 'itemName'],
   },
+  required: ['title', 'items'],
+  propertyOrdering: ['title', 'items'],
 };
+
+export interface ParsedAIResponse {
+  title: string;
+  items: string[][];
+}
 
 export const BATCH_UPDATE_REQUEST: gapi.client.sheets.Request[] = [
   // ============================================================================
@@ -139,11 +157,12 @@ export const BATCH_UPDATE_REQUEST: gapi.client.sheets.Request[] = [
               userEnteredFormat: {
                 horizontalAlignment: 'CENTER',
                 verticalAlignment: 'MIDDLE',
-                textFormat: { fontFamily: 'Arial', fontSize: 24 },
+                textFormat: { fontFamily: 'Arial', fontSize: 15 },
                 numberFormat: {
                   type: 'TEXT', // Treat as text to preserve the asterisks literally
                   pattern: '"*"#"*"', // Wrap the number with asterisks for barcode legibility
                 },
+                wrapStrategy: 'WRAP',
               },
             },
 

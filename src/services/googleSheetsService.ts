@@ -61,8 +61,10 @@ export const createNewSheetFromTemplate = async (
 
 export const writeToSpreadsheet = async (
   spreadsheetID: string,
-  dataToWrite: string[][],
-  range: string
+  values: string[][],
+  range: string,
+  title?: string,
+  titleRange?: string
 ): Promise<gapi.client.Response<gapi.client.sheets.UpdateValuesResponse>> => {
   if (!gapi?.client?.sheets) {
     throw new Error('messages.errorGapiClientNotReady');
@@ -70,7 +72,7 @@ export const writeToSpreadsheet = async (
   if (!gapi.client.getToken()) {
     throw new Error('messages.errorAccessTokenMissing');
   }
-  if (!dataToWrite || dataToWrite.length === 0) {
+  if (!values || values.length === 0) {
     throw new Error('messages.errorNoDataToWrite');
   }
   if (!spreadsheetID) {
@@ -80,13 +82,21 @@ export const writeToSpreadsheet = async (
     throw new Error('messages.errorRangeMissing');
   }
 
+  const data: gapi.client.sheets.ValueRange[] = [];
+  data.push({
+    range,
+    values,
+  });
+  if (title && titleRange) {
+    data.push({ range: titleRange, values: [[title]] });
+  }
+
   try {
-    const response = await gapi.client.sheets.spreadsheets.values.update({
+    const response = await gapi.client.sheets.spreadsheets.values.batchUpdate({
       spreadsheetId: spreadsheetID,
-      range,
-      valueInputOption: 'USER_ENTERED', // Determines how input data is interpreted. 'USER_ENTERED' means formulas are calculated, etc.
       resource: {
-        values: dataToWrite,
+        valueInputOption: 'USER_ENTERED', // Determines how input data is interpreted. 'USER_ENTERED' means formulas are calculated, etc.
+        data,
       },
     });
     return response;

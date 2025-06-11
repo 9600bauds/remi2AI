@@ -1,4 +1,5 @@
 import { GoogleGenAI, type Part, type Schema } from '@google/genai';
+import type { ParsedAIResponse } from '../utils/constants';
 
 const fileToGenerativePart = async (file: File): Promise<Part> => {
   const base64EncodedString = await new Promise<string>((resolve, reject) => {
@@ -99,39 +100,58 @@ export const sendAiRequest = async (
   throw new Error('messages.errorAIResponse');
 };
 
-export const jsonResponseTo2DArray = (
+export const parseAIResponse = (
   jsonText: string,
   schema: Schema
-): string[][] => {
+): ParsedAIResponse => {
   try {
-    const data: unknown = JSON.parse(jsonText);
+    const responseObject: unknown = JSON.parse(jsonText);
+
+    // Validate the new top-level object structure
     if (
-      !Array.isArray(data) ||
-      !data.every((item) => typeof item === 'object' && item !== null)
+      typeof responseObject !== 'object' ||
+      responseObject === null ||
+      !('title' in responseObject) ||
+      !('items' in responseObject) ||
+      typeof responseObject.title !== 'string' ||
+      !Array.isArray(responseObject.items)
     ) {
       throw new Error('messages.errorAISchema');
     }
-    const properties = schema.items?.properties;
-    if (!properties) {
+
+    const title = responseObject.title;
+    const itemsArray = responseObject.items;
+
+    // Get the ordered property names for each item from the schema.
+    // This is more robust than relying on the API's implicit ordering.
+    const propertyNames = schema.properties?.items?.items?.propertyOrdering;
+
+    if (!propertyNames || !Array.isArray(propertyNames)) {
       throw new Error('messages.errorAISchemaDefinitionInvalid');
     }
-    const propertyNames = Object.keys(properties);
-    const result: string[][] = data.map((item: Record<string, unknown>) => {
-      return propertyNames.map((propName) => {
-        const value = item[propName];
-        // eslint-disable-next-line @typescript-eslint/no-base-to-string
-        return value !== null && value !== undefined ? String(value) : '';
-      });
-    });
-    return result;
-  } catch (parseError: unknown) {
-    console.error(
-      "Failed to parse AI's JSON response or map to 2D array:",
-      parseError
+
+    // Map the array of item objects to a 2D array of strings
+    const dataRows: string[][] = itemsArray.map(
+      (item: Record<string, unknown>) => {
+        return propertyNames.map((propName) => {
+          const value = item[propName];
+          // eslint-disable-next-line @typescript-eslint/no-base-to-string
+          return value != null ? String(value) : '';
+        });
+      }
     );
+
+    return {
+      title: title,
+      items: dataRows,
+    };
+  } catch (parseError: unknown) {
+    console.error("Failed to parse AI's JSON response:", parseError);
     if (parseError instanceof SyntaxError) {
-      throw new Error('messages.errorAIJsonParse'); // Specific error for JSON parsing failures.
+      // Specific error for malformed JSON
+      throw new Error('messages.errorAIJsonParse');
     }
+    // For other errors, like schema validation or data transformation
     throw new Error('messages.errorAIDataTransformation');
   }
 };
