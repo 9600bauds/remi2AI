@@ -33,7 +33,7 @@ export const AI_SCHEMA: Schema = {
     title: {
       type: Type.STRING,
       description:
-        "A concise title for the extracted invoice, particularly the provider or the invoice number, if found. Example: 'ElectroDos #12345-678910'",
+        "A concise title for the extracted invoice, particularly the provider or the invoice number, if found. Example: 'Electrodos #12345-678910'",
     },
     items: {
       type: Type.ARRAY,
@@ -234,7 +234,7 @@ export const BATCH_UPDATE_REQUEST: gapi.client.sheets.Request[] = [
           textFormat: { fontFamily: 'Libre Barcode 39 Text', fontSize: 26 },
           numberFormat: {
             type: 'TEXT', // Treat as text to preserve the asterisks literally
-            pattern: '"*"#"*"', // Wrap the number with asterisks for barcode legibility
+            pattern: '"*"@"*"', // Wrap the number with asterisks for barcode legibility. Use text formatting.
           },
         },
       },
