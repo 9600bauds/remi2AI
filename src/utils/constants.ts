@@ -159,10 +159,6 @@ export const BATCH_UPDATE_REQUEST: gapi.client.sheets.Request[] = [
                 horizontalAlignment: 'CENTER',
                 verticalAlignment: 'MIDDLE',
                 textFormat: { fontFamily: 'Arial', fontSize: 15 },
-                numberFormat: {
-                  type: 'TEXT', // Treat as text to preserve the asterisks literally
-                  pattern: '"*"#"*"', // Wrap the number with asterisks for barcode legibility
-                },
                 wrapStrategy: 'WRAP',
               },
             },
@@ -236,10 +232,14 @@ export const BATCH_UPDATE_REQUEST: gapi.client.sheets.Request[] = [
           horizontalAlignment: 'CENTER',
           verticalAlignment: 'MIDDLE',
           textFormat: { fontFamily: 'Libre Barcode 39 Text', fontSize: 26 },
+          numberFormat: {
+            type: 'TEXT', // Treat as text to preserve the asterisks literally
+            pattern: '"*"#"*"', // Wrap the number with asterisks for barcode legibility
+          },
         },
       },
       fields:
-        'userEnteredFormat(horizontalAlignment,verticalAlignment,textFormat)',
+        'userEnteredFormat(horizontalAlignment,verticalAlignment,textFormat,numberFormat)',
     },
   },
 
