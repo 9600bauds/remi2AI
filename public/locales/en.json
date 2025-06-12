@@ -54,6 +54,7 @@
     "errorGoogleLoginUnknown": "Google login failed for an unknown reason.",
     "errorGoogleLoginWithMessage": "Google Login Error: {{message}}",
     "errorSessionExpired": "Your Google session has expired. Please log in again.",
+    "errorInsufficientPermissions": "Permission denied. Please log in again and give this app permission to create new files in your Google Drive.",
     "errorLoginDefaultDetail": "An authentication issue occurred.",
     "errorSignInRequired": "Please sign in to continue.",
     "errorProcessingGeneric": "An error occurred during processing: {{message}}",

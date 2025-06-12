@@ -180,6 +180,15 @@ function App() {
 
   const googleSignIn = useGoogleLogin({
     onSuccess: (tokenResponse) => {
+      const hasRequiredScope =
+        tokenResponse.scope && tokenResponse.scope.includes(GAPI_SCOPE);
+      if (!hasRequiredScope) {
+        // If the scope is not granted, immediately log out and show a specific error.
+        googleSignOut();
+        setTemporaryError('messages.errorInsufficientPermissions', 15000);
+        return;
+      }
+
       const expiresAt = Date.now() + tokenResponse.expires_in * 1000; // expires_in is in seconds
       onSignIn(tokenResponse.access_token, expiresAt);
 
@@ -354,7 +363,7 @@ function App() {
       } else {
         processedError = 'messages.errorUnknown';
       }
-      setTemporaryError(processedError);
+      setTemporaryError(processedError, 10000);
     } finally {
       setIsAwaitingAIResponse(false);
       setIsAwaitingGapiResponse(false);
