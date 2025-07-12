@@ -8,7 +8,9 @@ Try it for yourself at: [9600bauds.github.io/remi2AI](https://9600bauds.github.i
 
 # Demonstration video
 
-https://github.com/user-attachments/assets/a53b35be-86f2-4e68-aebc-3c43c8bf644c
+
+https://github.com/user-attachments/assets/f2723f01-6853-4df6-8e53-f376b7db4eb6
+
 
 # Problem Statement & Solution Overview
 
