@@ -83,7 +83,9 @@
 .thumbnailItem {
   display: flex;
   overflow-y: hidden;
-  flex-basis: calc(100% / 3); /* 3 images per row */
+  flex-basis: calc(
+    calc(100% / 3) - 0.2em
+  ); /* 3 images per row, minus the gap */
 }
 
 .thumbnailImageContainer {
