@@ -45,10 +45,15 @@ export const AI_SCHEMA: Schema = {
             description:
               "The amount for this item, exactly as it appears on the invoice. It will usually be whole numbers, do not confuse it with the price of the item (generally large and with many significant decimals) or the tax% (usually exactly 21% or 10.5%). It will usually be in a column titled 'Cant' (short for Cantidad), or 'U' (short for Unidades).",
           },
-          SKU: {
-            type: Type.STRING,
+          SKUs: {
+            type: Type.ARRAY,
             description:
-              "The provider's internal code for this item, if it appears. It will usually appear in a column titled 'Código', 'Cod.', 'Cod. E1' or similar. If there are multiple columns that seem suitable, include all of them, separated by a space.",
+              "A list of the provider's internal stock-keeping codes for this item, if they appear.",
+            items: {
+              type: Type.STRING,
+              description:
+                "One instance of the provider's internal code. It will usually appear in a column titled 'Código', 'Cod.', 'Cod. E1', 'Alias' or similar. It will never be in a column titled 'Despacho'.",
+            },
           },
           itemName: {
             type: Type.STRING,
@@ -56,8 +61,8 @@ export const AI_SCHEMA: Schema = {
               "Name of the item, exactly as it appears on the invoice. It may sometimes appear in a column titled 'Desc' (short for Descripción).",
           },
         },
-        required: ['amount', 'SKU', 'itemName'],
-        propertyOrdering: ['amount', 'SKU', 'itemName'],
+        required: ['amount', 'SKUs', 'itemName'],
+        propertyOrdering: ['amount', 'SKUs', 'itemName'],
       },
     },
   },
