@@ -89,11 +89,15 @@ export const sendAiRequest = async (
   console.log('Final String to Parse (after outer trim):', finalStringToParse);
 
   if (finalStringToParse) {
-    JSON.parse(finalStringToParse); // Validate final accumulated string
+    const beautifiedJson = JSON.stringify(
+      JSON.parse(finalStringToParse),
+      null,
+      2
+    );
     console.log('Final Accumulated JSON successfully parsed.');
     console.log('Collected Thoughts:', thoughtFragments);
     console.log('Collected JSON Fragments:', jsonFragments);
-    return finalStringToParse;
+    return beautifiedJson;
   } else if (thoughtFragments.length > 0) {
     console.warn('Only thoughts were received, no primary JSON output.');
   }
