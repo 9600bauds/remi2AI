@@ -334,7 +334,8 @@ function App() {
         items,
         SHEET_DATA_RANGE,
         title,
-        SHEET_TITLE_RANGE
+        SHEET_TITLE_RANGE,
+        rawJsonResult
       );
       setIsAwaitingGapiResponse(false);
       if (newSheet.spreadsheetUrl) {

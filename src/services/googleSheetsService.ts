@@ -1,3 +1,5 @@
+import { SHEET_JSON_RANGE } from "../utils/constants";
+
 export const createNewSheetFromTemplate = async (
   templateTitle: string,
   batchUpdatePayload: gapi.client.sheets.Request[]
@@ -64,7 +66,8 @@ export const writeToSpreadsheet = async (
   values: string[][],
   range: string,
   title?: string,
-  titleRange?: string
+  titleRange?: string,
+  rawJson?: string
 ): Promise<gapi.client.Response<gapi.client.sheets.UpdateValuesResponse>> => {
   if (!gapi?.client?.sheets) {
     throw new Error('messages.errorGapiClientNotReady');
@@ -89,6 +92,12 @@ export const writeToSpreadsheet = async (
   });
   if (title && titleRange) {
     data.push({ range: titleRange, values: [[title]] });
+  }
+  if (rawJson) {
+    data.push({
+      range: SHEET_JSON_RANGE,
+      values: [[rawJson]],
+    });
   }
 
   try {

@@ -5,8 +5,11 @@ export const LOCALSTORAGE_TOKEN_KEY = 'googleUserToken';
 export const MAX_FILES = 3;
 export const MAX_FILESIZE = 10 * 1024 * 1024; // 10MB;
 
-export const SHEET_DATA_RANGE: string = 'Sheet1!B2';
-export const SHEET_TITLE_RANGE: string = 'Sheet1!A1';
+export const SHEET_DATA_SHEETNAME: string = 'Data';
+export const SHEET_JSON_SHEETNAME: string = 'JSON';
+export const SHEET_DATA_RANGE: string = `${SHEET_DATA_SHEETNAME}!B2`;
+export const SHEET_TITLE_RANGE: string = `${SHEET_DATA_SHEETNAME}!A1`;
+export const SHEET_JSON_RANGE: string = `${SHEET_JSON_SHEETNAME}!A1`;
 export const DISCOVERY_DOCS = [
   'https://sheets.googleapis.com/$discovery/rest?version=v4',
   'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest',
@@ -76,6 +79,16 @@ export interface ParsedAIResponse {
 }
 
 export const BATCH_UPDATE_REQUEST: gapi.client.sheets.Request[] = [
+  // Rename Sheet1
+  {
+    updateSheetProperties: {
+      properties: {
+        sheetId: 0,
+        title: SHEET_DATA_SHEETNAME,
+      },
+      fields: 'title',
+    },
+  },
   // ============================================================================
   // COLUMN WIDTHS
   // ============================================================================
@@ -348,6 +361,51 @@ export const BATCH_UPDATE_REQUEST: gapi.client.sheets.Request[] = [
     updateSheetProperties: {
       properties: { sheetId: 0, gridProperties: { frozenRowCount: 1 } },
       fields: 'gridProperties.frozenRowCount',
+    },
+  },
+
+  // ============================================================================
+  // SHEET 2 (Raw JSON)
+  // ============================================================================
+  // Add a new sheet with the proper name
+  {
+    addSheet: {
+      properties: {
+        sheetId: 1,
+        title: SHEET_JSON_SHEETNAME,
+      },
+    },
+  },
+  // Set the width of Column A on the new sheet to be wide enough for JSON
+  {
+    updateDimensionProperties: {
+      range: {
+        sheetId: 1,
+        dimension: 'COLUMNS',
+        startIndex: 0,
+        endIndex: 1,
+      },
+      properties: { pixelSize: 800 },
+      fields: 'pixelSize',
+    },
+  },
+  // Set the format for cell A1 where the JSON will be placed
+  {
+    updateCells: {
+      start: { sheetId: 1, rowIndex: 0, columnIndex: 0 },
+      rows: [
+        {
+          values: [
+            {
+              userEnteredFormat: {
+                wrapStrategy: 'WRAP',
+                textFormat: { fontFamily: 'Courier New', fontSize: 10 },
+              },
+            },
+          ],
+        },
+      ],
+      fields: 'userEnteredFormat(wrapStrategy,textFormat)',
     },
   },
 ];
