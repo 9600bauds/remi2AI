@@ -17,7 +17,7 @@ export const DISCOVERY_DOCS = [
 export const GAPI_SCOPE = 'https://www.googleapis.com/auth/drive.file';
 export const API_KEY = import.meta.env.VITE_GOOGLE_API_KEY;
 
-export const AI_MODEL: string = 'gemini-2.5-flash-preview-05-20';
+export const AI_MODEL: string = 'gemini-2.5-flash';
 export const AI_PROMPT: string = `You are an expert at data entry, digitizing a scanned invoice provided by the user.
 Your task is to identify and list all the items presented in the scanned invoice.
 Analyze the provided images, gather the text that appears on the invoice, and then identify each item.
